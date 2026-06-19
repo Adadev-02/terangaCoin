@@ -1,0 +1,2027 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+<meta name="theme-color" content="#00853F">
+<title>TerangaCoin.sn — Achetez & vendez partout au Sénégal</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        vert: '#00853F', 'vert-d': '#006830', 'vert-xs': '#E8F5EE',
+        or: '#F97316', 'or-d': '#EA6A0C',
+        encre: '#0F1923', creme: '#FAFAF5',
+      }
+    }
+  }
+}
+</script>
+<style>
+/* ── BASE ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: 'Inter', sans-serif; background: #FAFAF5; color: #0F1923; overflow-x: hidden; }
+::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #00853F; border-radius: 2px; }
+::selection { background: #00853F; color: white; }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+@keyframes slideDown { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:translateY(0); } }
+@keyframes pulse-green { 0%,100%{ box-shadow:0 0 0 0 rgba(0,133,63,.4); } 70%{ box-shadow:0 0 0 8px rgba(0,133,63,0); } }
+@keyframes ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+@keyframes spin { to { transform:rotate(360deg); } }
+@keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+
+.fade-up { animation: fadeUp .4s ease both; }
+.slide-down { animation: slideDown .3s ease both; }
+
+/* ── CARD ── */
+.card {
+  background: white; border: 1px solid #E5E7EB; border-radius: 16px;
+  transition: transform .2s ease, box-shadow .2s ease; cursor: default;
+  overflow: hidden; position: relative;
+}
+.card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,133,63,.1); border-color: rgba(0,133,63,.25); }
+
+/* ── BUTTONS ── */
+.btn-vert { background: linear-gradient(135deg,#00853F,#006830); color: white; font-weight: 700; transition: all .2s; }
+.btn-vert:hover { background: linear-gradient(135deg,#006830,#004d22); box-shadow: 0 4px 16px rgba(0,133,63,.3); transform: translateY(-1px); }
+.btn-or { background: linear-gradient(135deg,#F97316,#ea6a0c); color: white; font-weight: 700; transition: all .2s; box-shadow: 0 4px 14px rgba(249,115,22,.3); }
+.btn-or:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(249,115,22,.4); }
+.btn-ghost { background: transparent; border: 1.5px solid #e5e7eb; color: #374151; font-weight: 600; transition: all .2s; }
+.btn-ghost:hover { border-color: #00853F; color: #00853F; }
+
+/* ── INPUTS ── */
+input, select, textarea {
+  background: white; border: 1.5px solid #e5e7eb;
+  border-radius: 10px; color: #0F1923; transition: all .2s;
+  font-family: 'Inter', sans-serif;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none; border-color: #00853F;
+  box-shadow: 0 0 0 3px rgba(0,133,63,.1);
+}
+input::placeholder, textarea::placeholder { color: #9ca3af; }
+select option { background: white; }
+
+/* ── MODAL ── */
+.modal-bg {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(15,25,35,.7); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center; padding: 1rem;
+}
+.modal-box {
+  background: white; border-radius: 20px;
+  width: 100%; max-width: 560px; max-height: 92vh; overflow-y: auto;
+  animation: fadeUp .3s ease; box-shadow: 0 32px 80px rgba(0,0,0,.2);
+}
+
+/* ── STEPPER ── */
+.step-dot { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.75rem; font-weight:800; transition:all .3s; }
+.step-dot.active { background:#00853F; color:white; }
+.step-dot.done { background:rgba(0,133,63,.15); color:#00853F; border:1px solid #00853F; }
+.step-dot.pending { background:#f3f4f6; color:#9ca3af; border:1px solid #e5e7eb; }
+.step-line { height:2px; flex:1; background:#e5e7eb; transition:background .3s; }
+.step-line.done { background:#00853F; }
+
+/* ── TICKER ── */
+.ticker-wrap { overflow:hidden; white-space:nowrap; }
+.ticker-inner { display:inline-flex; gap:2rem; animation:ticker 28s linear infinite; }
+
+/* ── SKELETON ── */
+.skeleton {
+  background: linear-gradient(90deg,#f0f0f0 25%,#f8f8f8 50%,#f0f0f0 75%);
+  background-size:200% 100%; animation:shimmer 1.4s infinite; border-radius:8px;
+}
+
+/* ── LOADER ── */
+.spinner { width:24px; height:24px; border:3px solid rgba(0,133,63,.2); border-top-color:#00853F; border-radius:50%; animation:spin .7s linear infinite; }
+
+/* ── TOAST ── */
+.toast {
+  position:fixed; bottom:1.5rem; right:1rem; z-index:2000;
+  background:#0F1923; color:white; border-radius:14px;
+  padding:.9rem 1.2rem; display:none; align-items:center; gap:.8rem;
+  box-shadow:0 8px 32px rgba(0,0,0,.3); max-width:320px;
+  animation:slideDown .3s ease;
+}
+.toast.show { display:flex; }
+
+/* ── BADGE ── */
+.badge-pro { background:#FEF3C7; color:#92400E; font-size:.68rem; font-weight:800; padding:.15rem .55rem; border-radius:50px; }
+.badge-urgnt { background:#FEE2E2; color:#DC2626; font-size:.68rem; font-weight:800; padding:.15rem .55rem; border-radius:50px; animation:pulse-green 1.5s infinite; }
+.badge-verifie { background:#D1FAE5; color:#065F46; font-size:.68rem; font-weight:800; padding:.15rem .55rem; border-radius:50px; }
+
+/* ── PHOTO PLACEHOLDER ── */
+.img-ph { background:linear-gradient(135deg,#E8F5EE,#D1FAE5); display:flex; align-items:center; justify-content:center; }
+
+/* ── ADMIN ── */
+.admin-full { position:fixed; inset:0; z-index:900; background:#F1F5F9; overflow-y:auto; }
+.admin-kpi { background:white; border:1px solid #e5e7eb; border-radius:14px; padding:1.1rem; border-top-width:3px; }
+
+/* ── FILTER ACTIVE ── */
+.filter-btn.on { background:#00853F; color:white; border-color:#00853F; }
+
+/* ── CAT CARD ── */
+.cat-card { transition:all .2s; cursor:pointer; }
+.cat-card:hover { transform:translateY(-2px); }
+.cat-card:hover .cat-icon { background:#00853F; }
+.cat-card:hover .cat-ico-txt { filter:brightness(100); }
+
+/* ── CHAT BUBBLE ── */
+.bubble-right { background:rgba(0,133,63,.12); border:1px solid rgba(0,133,63,.2); border-radius:14px 14px 4px 14px; margin-left:auto; }
+.bubble-left { background:#f3f4f6; border:1px solid #e5e7eb; border-radius:14px 14px 14px 4px; }
+
+/* ── PHOTO PREVIEW ── */
+.photo-drop { border:2px dashed #e5e7eb; border-radius:14px; transition:all .2s; }
+.photo-drop:hover, .photo-drop.drag { border-color:#00853F; background:#E8F5EE; }
+
+/* ── PANIER STICKY ── */
+.cart-sticky { position:fixed; bottom:0; left:0; right:0; z-index:400; transform:translateY(100%); transition:transform .3s; }
+.cart-sticky.open { transform:translateY(0); }
+
+/* ── PAGE OVERLAY ── */
+.page-overlay { position:fixed; inset:0; z-index:500; background:#FAFAF5; overflow-y:auto; animation:fadeUp .25s ease; }
+
+/* ── MOBILE TWEAKS ── */
+@media(max-width:640px) {
+  .hide-mobile { display:none !important; }
+  .chat-panel { width:100%; }
+}
+
+/* ── SUPABASE STATUS ── */
+.db-badge { font-size:.7rem; font-weight:700; padding:.2rem .6rem; border-radius:50px; }
+.db-ok { background:#D1FAE5; color:#065F46; }
+.db-err { background:#FEE2E2; color:#DC2626; }
+.db-wait { background:#FEF3C7; color:#92400E; }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════
+  CONFIG BANNER (À REMPLIR PAR L'ADMIN)
+════════════════════════════════════════════ -->
+<div id="configBanner" style="display:none;background:#1d4ed8;color:white;font-size:.8rem;padding:.6rem 1rem;text-align:center;font-weight:600">
+  ⚙️ Mode configuration — Renseignez vos clés Supabase et Cloudinary dans le fichier (section CONFIG) puis rechargez.
+</div>
+
+<!-- ════════════════════════════════════════════
+  BARRE SÉCURITÉ
+════════════════════════════════════════════ -->
+<div id="secBar" class="bg-amber-50 border-b border-amber-200 py-2 px-4 flex items-center justify-between text-xs">
+  <span class="text-amber-800">🛡️ <strong>TerangaCoin ne demande JAMAIS de code OM/Wave.</strong> Payez uniquement à la livraison, en face à face.</span>
+  <button onclick="this.parentElement.remove()" class="text-amber-500 hover:text-amber-700 ml-2 shrink-0">✕</button>
+</div>
+
+<!-- ════════════════════════════════════════════
+  NAV
+════════════════════════════════════════════ -->
+<nav class="sticky top-0 z-300 bg-white border-b border-gray-100 shadow-sm" style="z-index:300">
+  <div class="max-w-7xl mx-auto px-4 flex items-center justify-between h-16 gap-3">
+    <!-- Logo -->
+    <a href="#" onclick="showHome();return false;" class="flex items-center gap-2 shrink-0">
+      <div class="w-9 h-9 rounded-xl bg-vert flex items-center justify-center text-white font-black text-sm">TC</div>
+      <div class="leading-tight hidden sm:block">
+        <div class="font-black text-encre text-lg leading-none">TerangaCoin</div>
+        <div class="text-xs font-bold text-vert">.sn</div>
+      </div>
+    </a>
+
+    <!-- Recherche desktop -->
+    <div class="flex-1 max-w-xl hide-mobile">
+      <div class="relative">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+        <input id="navSearch" type="text" placeholder="iPhone, Bazin, Parcelle, Emploi..."
+          class="w-full pl-9 pr-4 py-2.5 text-sm"
+          oninput="handleSearch(this.value)"
+          onkeydown="if(event.key==='Enter')handleSearch(this.value)">
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center gap-2 shrink-0">
+      <!-- Statut BDD -->
+      <span id="dbStatus" class="db-badge db-wait hide-mobile">⏳ Connexion...</span>
+
+      <button onclick="openDepot()" class="btn-or px-4 py-2.5 rounded-xl text-sm whitespace-nowrap">
+        ➕ <span class="hidden sm:inline">Déposer une annonce</span><span class="sm:hidden">Annonce</span>
+      </button>
+      <button onclick="ouvrirAdmin()" class="btn-ghost px-3 py-2.5 rounded-xl text-sm hide-mobile">
+        ⚙️ Admin
+      </button>
+      <button onclick="togglePanier()" id="btnPanier" class="relative p-2.5 btn-ghost rounded-xl" style="display:none">
+        🛒<span id="panierCount" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">0</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Recherche mobile -->
+  <div class="sm:hidden px-4 pb-3">
+    <div class="relative">
+      <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+      <input type="text" placeholder="Rechercher..." class="w-full pl-9 pr-4 py-2 text-sm"
+        oninput="handleSearch(this.value)">
+    </div>
+  </div>
+</nav>
+
+<!-- ════════════════════════════════════════════
+  TICKER LIVE
+════════════════════════════════════════════ -->
+<div class="bg-encre py-2 overflow-hidden border-b border-white border-opacity-5">
+  <div class="ticker-wrap">
+    <div class="ticker-inner text-xs text-gray-400" id="tickerEl">
+      <span>🇸🇳 TerangaCoin.sn — Le marché digital du Sénégal • </span>
+      <span>✅ Publication gratuite en 30 secondes • </span>
+      <span>💬 Vos clients vous contactent directement sur WhatsApp • </span>
+      <span>🛡️ Site sécurisé — aucun paiement en avance • </span>
+      <span>📦 <span id="tickerCount">0</span> annonces actives maintenant • </span>
+      <span>📞 Support : +221 70 916 57 45 • </span>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+  PAGE ACCUEIL
+════════════════════════════════════════════ -->
+<div id="pageHome">
+
+  <!-- HERO -->
+  <section class="py-10 sm:py-16 px-4 relative overflow-hidden" style="background:linear-gradient(135deg,#00853F 0%,#006830 60%,#004d22 100%)">
+    <div class="absolute inset-0 opacity-5" style="background-image:url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")"></div>
+    <div class="relative z-10 max-w-3xl mx-auto text-center">
+      <div class="flex flex-wrap justify-center gap-2 mb-5">
+        <span class="text-xs px-3 py-1 rounded-full font-bold" style="background:rgba(255,255,255,.15);color:white">🇸🇳 100% Sénégal</span>
+        <span class="text-xs px-3 py-1 rounded-full font-bold" style="background:rgba(255,255,255,.15);color:white">⚡ Gratuit</span>
+        <span id="heroStatBadge" class="text-xs px-3 py-1 rounded-full font-bold" style="background:rgba(255,255,255,.15);color:white">📦 Chargement...</span>
+      </div>
+      <h1 class="text-3xl sm:text-5xl font-black text-white leading-tight mb-3">
+        Achetez, vendez, échangez<br>
+        <span class="text-yellow-300">partout au Sénégal</span>
+      </h1>
+      <p class="text-green-100 text-base sm:text-lg mb-8 max-w-xl mx-auto leading-relaxed">
+        Votre annonce en ligne en 30 secondes. Vos clients sur WhatsApp directement.
+      </p>
+      <!-- Barre recherche hero -->
+      <div class="bg-white rounded-2xl p-2 flex gap-2 shadow-2xl max-w-xl mx-auto">
+        <div class="flex-1 relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+          <input id="heroSearchInput" type="text" placeholder="Que cherchez-vous ?"
+            class="w-full pl-10 pr-3 py-3 text-sm border-none shadow-none" style="border:none;box-shadow:none"
+            oninput="handleSearch(this.value)"
+            onkeydown="if(event.key==='Enter')handleSearch(this.value)">
+        </div>
+        <select id="heroRegionSel" onchange="filterRegion(this.value)"
+          class="px-3 py-2 text-sm rounded-xl border border-gray-100 text-gray-700 font-medium cursor-pointer">
+          <option value="">🌍 Toutes régions</option>
+          <option>Dakar</option><option>Thiès</option><option>Mbour</option>
+          <option>Saint-Louis</option><option>Touba</option><option>Ziguinchor</option>
+          <option>Kaolack</option><option>Autres</option>
+        </select>
+        <button onclick="handleSearch(document.getElementById('heroSearchInput').value)" class="btn-or px-5 py-2.5 rounded-xl text-sm">Chercher</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CATÉGORIES -->
+  <section class="max-w-7xl mx-auto px-4 py-8">
+    <h2 class="font-black text-xl text-encre mb-5">Parcourir par catégorie</h2>
+    <div id="catsGrid" class="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-9 gap-3"></div>
+  </section>
+
+  <!-- FILTRES RAPIDES -->
+  <section class="max-w-7xl mx-auto px-4 pb-4">
+    <div class="flex flex-wrap gap-2" id="quickFilters">
+      <button onclick="filterCat('',this)" class="filter-btn on px-4 py-2 rounded-xl text-sm font-semibold border border-gray-200 bg-white transition">Toutes</button>
+      <button onclick="filterCat('Véhicules',this)" class="filter-btn px-4 py-2 rounded-xl text-sm font-semibold border border-gray-200 bg-white hover:border-vert transition">🚗 Véhicules</button>
+      <button onclick="filterCat('Immobilier',this)" class="filter-btn px-4 py-2 rounded-xl text-sm font-semibold border border-gray-200 bg-white hover:border-vert transition">🏠 Immobilier</button>
+      <button onclick="filterCat('Électronique',this)" class="filter-btn px-4 py-2 rounded-xl text-sm font-semibold border border-gray-200 bg-white hover:border-vert transition">📱 Électronique</button>
+      <button onclick="filterCat('Mode',this)" class="filter-btn px-4 py-2 rounded-xl text-sm font-semibold border border-gray-200 bg-white hover:border-vert transition">👗 Mode & Bazin</button>
+      <button onclick="filterCat('Services',this)" class="filter-btn px-4 py-2 rounded-xl text-sm font-semibold border border-gray-200 bg-white hover:border-vert transition">🛠️ Services</button>
+      <button onclick="filterCat('Emploi',this)" class="filter-btn px-4 py-2 rounded-xl text-sm font-semibold border border-gray-200 bg-white hover:border-vert transition">💼 Emploi</button>
+      <button onclick="filterCat('URGENT',this)" class="filter-btn px-4 py-2 rounded-xl text-sm font-semibold border border-gray-200 bg-white hover:border-vert transition">🔥 Urgentes</button>
+    </div>
+  </section>
+
+  <!-- ANNONCES BOOSTÉES -->
+  <section class="max-w-7xl mx-auto px-4 pb-3" id="sectionBoosted" style="display:none">
+    <div class="flex items-center gap-2 mb-3">
+      <span class="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse"></span>
+      <h2 class="font-black text-base text-encre">À la une</h2>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4" id="boostedGrid"></div>
+  </section>
+
+  <!-- TOUTES ANNONCES -->
+  <section class="max-w-7xl mx-auto px-4 pb-12">
+    <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+      <h2 class="font-black text-xl text-encre">
+        Toutes les annonces
+        <span class="text-gray-400 font-normal text-base ml-2" id="countLabel"></span>
+      </h2>
+      <div class="flex gap-2 items-center">
+        <select onchange="sortAnnonces(this.value)" class="text-sm px-3 py-2 rounded-xl cursor-pointer">
+          <option value="recent">Plus récentes</option>
+          <option value="prix_asc">Prix croissant</option>
+          <option value="prix_desc">Prix décroissant</option>
+          <option value="vues">Plus vues</option>
+        </select>
+        <button onclick="chargerAnnonces()" class="p-2.5 btn-ghost rounded-xl text-sm" title="Rafraîchir">🔄</button>
+      </div>
+    </div>
+
+    <!-- Skeleton loader -->
+    <div id="skeletonGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div class="skeleton h-64 rounded-2xl"></div>
+      <div class="skeleton h-64 rounded-2xl"></div>
+      <div class="skeleton h-64 rounded-2xl"></div>
+      <div class="skeleton h-64 rounded-2xl"></div>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4" id="annoncesGrid" style="display:none"></div>
+
+    <!-- État vide -->
+    <div id="emptyState" class="hidden py-20 text-center">
+      <div class="text-6xl mb-4">📭</div>
+      <h3 class="font-bold text-xl text-gray-600 mb-2">Aucune annonce pour l'instant</h3>
+      <p class="text-gray-400 mb-6 text-sm">Soyez le premier à publier dans cette catégorie !</p>
+      <button onclick="openDepot()" class="btn-or px-6 py-3 rounded-xl font-bold">Publier maintenant</button>
+    </div>
+  </section>
+
+  <!-- COMMENT ÇA MARCHE -->
+  <section class="bg-encre py-12 px-4">
+    <div class="max-w-4xl mx-auto">
+      <h2 class="font-black text-2xl text-white text-center mb-8">Comment ça marche ?</h2>
+      <div class="grid sm:grid-cols-3 gap-6">
+        <div class="text-center">
+          <div class="w-14 h-14 rounded-2xl bg-vert mx-auto flex items-center justify-center text-2xl mb-4">📝</div>
+          <h3 class="font-bold text-white mb-2">1. Publiez gratuitement</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">Titre, photo, prix, ville. Votre annonce est en ligne en 30 secondes.</p>
+        </div>
+        <div class="text-center">
+          <div class="w-14 h-14 rounded-2xl bg-vert mx-auto flex items-center justify-center text-2xl mb-4">📱</div>
+          <h3 class="font-bold text-white mb-2">2. Recevez des contacts</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">Les acheteurs vous contactent directement sur WhatsApp ou par téléphone.</p>
+        </div>
+        <div class="text-center">
+          <div class="w-14 h-14 rounded-2xl bg-vert mx-auto flex items-center justify-center text-2xl mb-4">🤝</div>
+          <h3 class="font-bold text-white mb-2">3. Finalisez en sécurité</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">Rencontrez-vous dans un lieu public. Payez à la livraison. Jamais d'avance.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="bg-gray-900 text-gray-400 py-8 px-4">
+    <div class="max-w-7xl mx-auto">
+      <div class="grid sm:grid-cols-3 gap-6 mb-6">
+        <div>
+          <div class="font-black text-white text-xl mb-2">TerangaCoin<span class="text-vert">.sn</span></div>
+          <p class="text-sm leading-relaxed">Le marché digital sénégalais. Achetez et vendez en toute confiance.</p>
+          <div class="mt-3 flex items-center gap-2">
+            <a href="https://wa.me/221709165745" target="_blank" class="flex items-center gap-2 text-sm text-green-400 hover:text-green-300 transition">
+              💬 +221 70 916 57 45
+            </a>
+          </div>
+        </div>
+        <div>
+          <h4 class="text-white font-bold mb-3">Liens utiles</h4>
+          <ul class="space-y-1.5 text-sm">
+            <li><a href="#" onclick="openDepot();return false;" class="hover:text-vert transition">Publier une annonce</a></li>
+            <li><a href="#" class="hover:text-vert transition">Conseils de sécurité</a></li>
+            <li><a href="#" class="hover:text-vert transition">Conditions d'utilisation</a></li>
+            <li><a href="#" onclick="ouvrirAdmin();return false;" class="hover:text-vert transition">Espace Admin</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="text-white font-bold mb-3">Options Pro</h4>
+          <ul class="space-y-1.5 text-sm">
+            <li class="flex items-center gap-2">🔥 <span>Boost 7 jours — 1 000 FCFA</span></li>
+            <li class="flex items-center gap-2">⭐ <span>Badge Vérifié — 5 000 FCFA/mois</span></li>
+            <li class="flex items-center gap-2">🏪 <span>Boutique Pro — Sur demande</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="border-t border-gray-800 pt-4 text-xs text-center">
+        © 2025 TerangaCoin.sn — Fait avec 🇸🇳 au Sénégal · Contact admin : +221 70 916 57 45
+      </div>
+    </div>
+  </footer>
+
+</div><!-- /pageHome -->
+
+<!-- ════════════════════════════════════════════
+  PAGE DÉTAIL ANNONCE
+════════════════════════════════════════════ -->
+<div id="pageDetail" class="page-overlay" style="display:none">
+  <div class="max-w-4xl mx-auto px-4 py-6">
+    <button onclick="closeDetail()" class="flex items-center gap-2 text-vert font-semibold mb-6 hover:underline text-sm">← Retour aux annonces</button>
+    <div id="detailContent"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+  PAGE BOUTIQUE PRO
+════════════════════════════════════════════ -->
+<div id="pageBoutique" class="page-overlay" style="display:none">
+  <div id="boutiqueContent"></div>
+</div>
+
+<!-- ════════════════════════════════════════════
+  PANEL ADMIN COMPLET
+════════════════════════════════════════════ -->
+<div id="pageAdmin" class="admin-full" style="display:none">
+  <div style="max-width:1100px;margin:0 auto;padding:1.5rem 1rem">
+    <!-- Header admin -->
+    <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+      <div>
+        <div class="font-black text-xl text-encre">⚡ Panel Admin — TerangaCoin.sn</div>
+        <div class="text-xs text-gray-500 mt-0.5">Connecté · <span id="adminHeure"></span> · Supabase <span id="adminDbOk" class="db-badge db-wait">⏳</span></div>
+      </div>
+      <div class="flex gap-2 flex-wrap">
+        <button onclick="adminExport()" class="btn-ghost px-4 py-2.5 rounded-xl text-sm font-bold">📥 Export CSV</button>
+        <button onclick="closeAdmin()" class="px-4 py-2.5 rounded-xl text-sm font-bold text-white" style="background:#ef4444">⬅ Quitter</button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+      <div class="admin-kpi" style="border-top-color:#00853F"><div class="font-black text-2xl text-vert" id="kTotal">—</div><div class="text-xs text-gray-500 mt-1">Annonces totales</div></div>
+      <div class="admin-kpi" style="border-top-color:#3b82f6"><div class="font-black text-2xl text-blue-600" id="kAuj">—</div><div class="text-xs text-gray-500 mt-1">Aujourd'hui</div></div>
+      <div class="admin-kpi" style="border-top-color:#f97316"><div class="font-black text-2xl text-or" id="kBoosted">—</div><div class="text-xs text-gray-500 mt-1">Boostées</div></div>
+      <div class="admin-kpi" style="border-top-color:#8b5cf6"><div class="font-black text-2xl text-purple-600" id="kVues">—</div><div class="text-xs text-gray-500 mt-1">Vues totales</div></div>
+      <div class="admin-kpi" style="border-top-color:#eab308"><div class="font-black text-2xl text-yellow-600" id="kPro">—</div><div class="text-xs text-gray-500 mt-1">Comptes Pro</div></div>
+      <div class="admin-kpi" style="border-top-color:#10b981"><div class="font-black text-2xl text-emerald-600" id="kCA">—</div><div class="text-xs text-gray-500 mt-1">CA boosts</div></div>
+    </div>
+
+    <!-- Onglets admin -->
+    <div class="flex gap-2 mb-5 overflow-x-auto pb-1">
+      <button onclick="adminOng('annonces',this)" id="aTabAnn" class="admin-tab active px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap" style="background:#00853F;color:white">📋 Annonces</button>
+      <button onclick="adminOng('boost',this)" id="aTabBoost" class="admin-tab px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap btn-ghost">🔥 Boosts</button>
+      <button onclick="adminOng('signalements',this)" id="aTabSig" class="admin-tab px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap btn-ghost">🚨 Signalements</button>
+      <button onclick="adminOng('stats',this)" id="aTabStats" class="admin-tab px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap btn-ghost">📊 Stats</button>
+      <button onclick="adminOng('message',this)" id="aTabMsg" class="admin-tab px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap btn-ghost">📡 Message</button>
+    </div>
+
+    <!-- Contenu dynamique admin -->
+    <div id="adminContent"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+  MODAL LOGIN ADMIN
+════════════════════════════════════════════ -->
+<div id="adminLoginModal" class="modal-bg" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box max-w-sm">
+    <div class="p-7 text-center">
+      <div class="text-5xl mb-4">🔐</div>
+      <h3 class="font-black text-xl text-encre mb-1">Espace Administrateur</h3>
+      <p class="text-gray-500 text-sm mb-5">TerangaCoin.sn — Accès réservé</p>
+      <input id="adminPwInput" type="password" placeholder="Mot de passe..."
+        class="w-full px-4 py-3 text-sm mb-3"
+        onkeydown="if(event.key==='Enter')checkAdminPw()">
+      <button onclick="checkAdminPw()" class="w-full btn-vert py-3 rounded-xl text-sm font-bold">Accéder →</button>
+      <p class="text-xs text-gray-400 mt-3">Contact : wa.me/221709165745</p>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+  MODAL DÉPÔT ANNONCE
+════════════════════════════════════════════ -->
+<div id="depotModal" class="modal-bg" style="display:none" onclick="if(event.target===this)closeDepot()">
+  <div class="modal-box">
+    <!-- Header -->
+    <div class="flex items-center justify-between p-5 border-b border-gray-100">
+      <div>
+        <h2 class="font-black text-lg text-encre">📢 Déposer une annonce</h2>
+        <p class="text-xs text-gray-500 mt-0.5">Gratuit · En ligne en 30 secondes</p>
+      </div>
+      <button onclick="closeDepot()" class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition">✕</button>
+    </div>
+
+    <!-- Stepper -->
+    <div class="px-5 py-4 border-b border-gray-50">
+      <div class="flex items-center gap-1">
+        <div class="step-dot active" id="d1">1</div>
+        <div class="step-line" id="dl1"></div>
+        <div class="step-dot pending" id="d2">2</div>
+        <div class="step-line" id="dl2"></div>
+        <div class="step-dot pending" id="d3">3</div>
+      </div>
+      <div class="flex justify-between text-xs text-gray-500 mt-1.5">
+        <span>Catégorie</span><span>Détails</span><span>Contact</span>
+      </div>
+    </div>
+
+    <!-- Étape 1 -->
+    <div id="depotS1" class="p-5 space-y-4">
+      <div>
+        <label class="block text-sm font-bold text-gray-700 mb-2">Catégorie *</label>
+        <div class="grid grid-cols-3 gap-2" id="depotCatGrid"></div>
+      </div>
+      <div>
+        <label class="block text-sm font-bold text-gray-700 mb-2">Titre de l'annonce *</label>
+        <input id="dTitre" type="text" maxlength="80" placeholder="Ex: iPhone 13 Pro Max 256GB comme neuf" class="w-full px-4 py-3 text-sm">
+        <div class="text-xs text-gray-400 text-right mt-1" id="dTitreCount">0/80</div>
+      </div>
+      <div>
+        <label class="block text-sm font-bold text-gray-700 mb-2">Description *</label>
+        <textarea id="dDesc" rows="4" placeholder="État, caractéristiques, raison de la vente..." class="w-full px-4 py-3 text-sm resize-none"></textarea>
+      </div>
+      <button onclick="dNext(2)" class="w-full btn-vert py-3 rounded-xl">Continuer →</button>
+    </div>
+
+    <!-- Étape 2 -->
+    <div id="depotS2" class="p-5 space-y-4" style="display:none">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-2">Prix (FCFA) *</label>
+          <input id="dPrix" type="number" min="0" placeholder="250000" class="w-full px-4 py-3 text-sm">
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-2">Région *</label>
+          <select id="dVille" class="w-full px-4 py-3 text-sm cursor-pointer">
+            <option value="">— Choisir —</option>
+            <option>Dakar</option><option>Thiès</option><option>Mbour</option>
+            <option>Saint-Louis</option><option>Touba</option><option>Ziguinchor</option>
+            <option>Kaolack</option><option>Autres</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-bold text-gray-700 mb-2">Quartier (facultatif)</label>
+        <input id="dQuartier" type="text" placeholder="Ex: Plateau, Almadies, Mermoz..." class="w-full px-4 py-3 text-sm">
+      </div>
+      <!-- Photo upload -->
+      <div>
+        <label class="block text-sm font-bold text-gray-700 mb-2">Photo principale</label>
+        <div class="photo-drop p-6 text-center cursor-pointer" id="photoDrop" onclick="document.getElementById('photoFile').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handlePhotoDrop(event)">
+          <div id="photoDropContent">
+            <div class="text-4xl mb-2">📷</div>
+            <p class="text-sm text-gray-500">Cliquez ou glissez une photo</p>
+            <p class="text-xs text-gray-400 mt-1">JPG, PNG · Max 5 Mo</p>
+          </div>
+          <img id="photoPreviewImg" src="" class="hidden mt-3 rounded-xl h-32 w-full object-cover">
+          <input id="photoFile" type="file" accept="image/*" class="hidden" onchange="previewPhoto(this)">
+        </div>
+        <div id="photoUploadStatus" class="hidden mt-2 text-xs text-gray-500 flex items-center gap-2">
+          <div class="spinner w-4 h-4"></div> Upload en cours...
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <button onclick="dNext(1)" class="px-5 py-3 rounded-xl btn-ghost text-sm">← Retour</button>
+        <button onclick="dNext(3)" class="flex-1 btn-vert py-3 rounded-xl">Continuer →</button>
+      </div>
+    </div>
+
+    <!-- Étape 3 -->
+    <div id="depotS3" class="p-5 space-y-4" style="display:none">
+      <div>
+        <label class="block text-sm font-bold text-gray-700 mb-2">Numéro WhatsApp *</label>
+        <div class="flex gap-2">
+          <div class="px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-600 shrink-0">+221</div>
+          <input id="dWA" type="tel" placeholder="70 916 57 45" maxlength="12" class="flex-1 px-4 py-3 text-sm">
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-bold text-gray-700 mb-2">Votre nom / Nom de l'entreprise *</label>
+        <input id="dVendeur" type="text" placeholder="Ex: Ousmane Diallo ou Bazin Style Thiès" class="w-full px-4 py-3 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-bold text-gray-700 mb-3">Type de compte</label>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="cursor-pointer">
+            <input type="radio" name="typeCompte" value="particulier" checked class="sr-only" id="typePartic">
+            <div class="type-option border-2 border-vert bg-green-50 rounded-xl p-4 text-center transition" id="typeParticBox">
+              <div class="text-2xl mb-1">👤</div>
+              <div class="font-bold text-sm">Particulier</div>
+              <div class="text-xs text-gray-500 mt-0.5">Gratuit</div>
+            </div>
+          </label>
+          <label class="cursor-pointer">
+            <input type="radio" name="typeCompte" value="pro" class="sr-only" id="typePro">
+            <div class="type-option border-2 border-gray-200 rounded-xl p-4 text-center transition" id="typeProBox">
+              <div class="text-2xl mb-1">🏪</div>
+              <div class="font-bold text-sm">Pro / Boutique</div>
+              <div class="text-xs text-vert font-bold mt-0.5">+ Boutique gratuite</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Options Pro -->
+      <div id="optionsPro" class="hidden space-y-3">
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <h4 class="font-bold text-amber-800 mb-3">🏪 Options Boutique</h4>
+          <div class="space-y-2">
+            <input id="dNomBoutique" type="text" placeholder="Nom de votre boutique" class="w-full px-3 py-2.5 text-sm">
+            <select id="dLivraison" class="w-full px-3 py-2.5 text-sm cursor-pointer">
+              <option value="">Options de livraison</option>
+              <option>Gratuite localement</option>
+              <option>5 000 FCFA vers Dakar</option>
+              <option>À récupérer sur place</option>
+              <option>Livraison nationale</option>
+            </select>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="dWaveOption" class="w-4 h-4 accent-blue-600">
+              <span class="text-sm font-medium">💳 J'accepte le paiement Wave</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Boost option -->
+      <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+        <label class="flex items-start gap-3 cursor-pointer">
+          <input type="checkbox" id="dBoost" class="w-4 h-4 mt-0.5 accent-red-600">
+          <div>
+            <div class="font-bold text-red-700 text-sm">🚀 Booster mon annonce — 2 000 FCFA</div>
+            <div class="text-xs text-red-600 mt-0.5">Mise en avant 7 jours + badge URGENT. Paiement par Wave ou OM après publication.</div>
+          </div>
+        </label>
+      </div>
+
+      <div class="flex gap-3">
+        <button onclick="dNext(2)" class="px-5 py-3 rounded-xl btn-ghost text-sm">← Retour</button>
+        <button onclick="publierAnnonce()" id="btnPublier" class="flex-1 btn-vert py-3 rounded-xl font-bold text-base flex items-center justify-center gap-2">
+          <span>📢 Publier gratuitement</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+  MODAL BOOST PAIEMENT
+════════════════════════════════════════════ -->
+<div id="boostModal" class="modal-bg" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box max-w-sm">
+    <div class="p-6 text-center">
+      <div class="text-5xl mb-4">🚀</div>
+      <h3 class="font-black text-xl text-encre mb-2">Booster votre annonce</h3>
+      <p class="text-gray-500 text-sm mb-5">Votre annonce apparaîtra en tête pendant 7 jours avec le badge URGENT.</p>
+      <div class="bg-gray-50 rounded-2xl p-5 mb-5 text-left space-y-3">
+        <div class="font-bold text-encre text-sm mb-3">💸 Payer 2 000 FCFA via :</div>
+        <div class="flex items-center gap-3 p-3 bg-amber-50 rounded-xl border border-amber-200">
+          <span class="text-2xl">🟡</span>
+          <div><div class="font-bold text-sm">Orange Money</div><div class="text-xs text-gray-600 font-mono">#144*2*1*709165745*1000#</div></div>
+        </div>
+        <div class="flex items-center gap-3 p-3 bg-blue-50 rounded-xl border border-blue-200">
+          <span class="text-2xl">🔵</span>
+          <div><div class="font-bold text-sm">Wave</div><div class="text-xs text-gray-600">Numéro : 70 916 57 45</div></div>
+        </div>
+      </div>
+      <div class="bg-green-50 rounded-xl p-4 mb-4 text-sm text-green-800">
+        Après paiement, envoyez la capture sur WhatsApp au <strong>+221 70 916 57 45</strong> avec le numéro de votre annonce. Activation sous 1h.
+      </div>
+      <a href="https://wa.me/221709165745?text=Salam,%20j'ai%20payé%20le%20boost%20pour%20mon%20annonce.%20Voici%20ma%20capture."
+        target="_blank" class="flex items-center justify-center gap-2 w-full btn-vert py-3 rounded-xl font-bold mb-2">
+        💬 Envoyer la preuve sur WhatsApp
+      </a>
+      <button onclick="document.getElementById('boostModal').style.display='none'" class="text-sm text-gray-500 hover:text-gray-700">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+  MODAL SIGNALEMENT
+════════════════════════════════════════════ -->
+<div id="signalModal" class="modal-bg" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box max-w-sm">
+    <div class="p-5 border-b flex items-center justify-between">
+      <h3 class="font-bold text-encre">🚨 Signaler cette annonce</h3>
+      <button onclick="document.getElementById('signalModal').style.display='none'" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-sm">✕</button>
+    </div>
+    <div class="p-5 space-y-3">
+      <p class="text-sm text-gray-600">Pourquoi signalez-vous cette annonce ?</p>
+      <div class="space-y-2" id="signalementsChoix">
+        <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="sigRaison" value="Arnaque ou fraude" class="accent-red-600"><span class="text-sm">Arnaque ou fraude</span></label>
+        <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="sigRaison" value="Produit contrefait" class="accent-red-600"><span class="text-sm">Produit contrefait</span></label>
+        <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="sigRaison" value="Annonce en double" class="accent-red-600"><span class="text-sm">Annonce en double</span></label>
+        <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="sigRaison" value="Prix trompeur" class="accent-red-600"><span class="text-sm">Prix trompeur</span></label>
+        <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="sigRaison" value="Contenu inapproprié" class="accent-red-600"><span class="text-sm">Contenu inapproprié</span></label>
+      </div>
+      <button onclick="envoyerSignalement()" class="w-full bg-red-600 text-white py-3 rounded-xl font-bold hover:bg-red-700 transition">Envoyer le signalement</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+  PANIER STICKY
+════════════════════════════════════════════ -->
+<div id="cartBar" class="cart-sticky bg-encre text-white shadow-2xl">
+  <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between gap-4 flex-wrap">
+    <div>
+      <div class="text-sm font-semibold text-gray-300">🛒 Votre panier</div>
+      <div class="font-black text-xl text-yellow-400" id="cartTotalLabel">0 FCFA</div>
+      <div class="text-xs text-gray-400" id="cartQtyLabel">0 article</div>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="togglePanier()" class="px-4 py-2.5 rounded-xl border border-gray-600 text-sm font-semibold hover:bg-gray-800 transition">Voir panier</button>
+      <button onclick="commanderWA()" class="btn-vert px-5 py-2.5 rounded-xl font-bold text-sm">💬 Commander via WhatsApp</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+  TOAST
+════════════════════════════════════════════ -->
+<div class="toast" id="toast">
+  <span id="toastIcon" class="text-2xl shrink-0">✅</span>
+  <div>
+    <div id="toastTitle" class="font-bold text-sm"></div>
+    <div id="toastMsg" class="text-xs text-gray-400 mt-0.5"></div>
+  </div>
+  <button onclick="document.getElementById('toast').classList.remove('show')" class="ml-2 text-gray-500 hover:text-white shrink-0">✕</button>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   TerangaCoin.sn — Version Supabase + Cloudinary
+   Admin WhatsApp : +221 70 916 57 45
+   Mot de passe admin : teranga2025
+════════════════════════════════════════════════════════════ */
+
+// ── CONFIG — REMPLIR VOS CLÉS ICI ──────────────────────────
+const CONFIG = {
+  // 1. Supabase : https://app.supabase.com → Settings → API
+  SUPABASE_URL:  'https://abcdefgh.supabase.co',         // ex: https://xxxx.supabase.co
+  SUPABASE_KEY:  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',    // clé anon/public
+
+  // 2. Cloudinary : https://cloudinary.com → Dashboard
+  CLOUDINARY_NAME:   'teranga-sn',       // ex: mon-site
+  CLOUDINARY_PRESET: 'teranga_unsigned',        // upload preset non signé
+
+  // 3. Admin
+  ADMIN_PASSWORD: 'teranga2025',
+  ADMIN_WA:       '221709165745',
+
+  // 4. Notification admin à chaque nouvelle annonce
+  // Utilise CallMeBot (gratuit) — inscription sur callmebot.com
+  CALLMEBOT_KEY: '',    // votre clé CallMeBot (laisser vide si non configuré)
+};
+
+// ── VÉRIFICATION CONFIG ─────────────────────────────────────
+const CONFIG_OK = CONFIG.SUPABASE_URL !== 'VOTRE_SUPABASE_URL' &&
+                  CONFIG.CLOUDINARY_NAME !== 'VOTRE_CLOUD_NAME';
+
+// ── INIT SUPABASE ───────────────────────────────────────────
+let sb = null;
+if (CONFIG_OK) {
+  sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
+}
+
+// ── ÉTAT GLOBAL ─────────────────────────────────────────────
+let ANNONCES     = [];
+let filtreActif  = '';
+let regionActive = '';
+let searchQ      = '';
+let sortMode     = 'recent';
+let depotStep    = 1;
+let selectedCat  = '';
+let photoUrl     = '';
+let panier       = [];
+let currentBoutique = null;
+let currentSignalId = null;
+let toastTimer;
+
+// ── CATÉGORIES ──────────────────────────────────────────────
+const CATS = [
+  { nom:'Véhicules',    emoji:'🚗' },
+  { nom:'Immobilier',   emoji:'🏠' },
+  { nom:'Électronique', emoji:'📱' },
+  { nom:'Mode',         emoji:'👗' },
+  { nom:'Maison',       emoji:'🛋️' },
+  { nom:'Emploi',       emoji:'💼' },
+  { nom:'Services',     emoji:'🛠️' },
+  { nom:'Thiouraye',    emoji:'🌿' },
+  { nom:'Alimentation', emoji:'🥗' },
+  { nom:'Sports',       emoji:'⚽' },
+  { nom:'Animaux',      emoji:'🐾' },
+  { nom:'Loisirs',      emoji:'🎮' },
+  { nom:'Bâtiment',     emoji:'🏗️' },
+  { nom:'Agriculture',  emoji:'🌾' },
+  { nom:'Autres',       emoji:'📦' },
+];
+
+// ════════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', async () => {
+  // Mode config si clés manquantes
+  if (!CONFIG_OK) {
+    document.getElementById('configBanner').style.display = 'block';
+    document.getElementById('dbStatus').textContent = '⚠️ Config manquante';
+    document.getElementById('dbStatus').className = 'db-badge db-err hide-mobile';
+    // Fallback localStorage
+    ANNONCES = JSON.parse(localStorage.getItem('tc_fallback') || '[]');
+    finishInit();
+    return;
+  }
+
+  // Test connexion Supabase
+  try {
+    const { error } = await sb.from('annonces').select('count', { count: 'exact', head: true });
+    if (error) throw error;
+    document.getElementById('dbStatus').textContent = '🟢 En ligne';
+    document.getElementById('dbStatus').className = 'db-badge db-ok hide-mobile';
+  } catch {
+    document.getElementById('dbStatus').textContent = '🔴 Hors ligne';
+    document.getElementById('dbStatus').className = 'db-badge db-err hide-mobile';
+    ANNONCES = JSON.parse(localStorage.getItem('tc_fallback') || '[]');
+    finishInit();
+    return;
+  }
+
+  await chargerAnnonces();
+  finishInit();
+
+  // Écoute temps réel Supabase
+  sb.channel('annonces_live')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'annonces' }, () => {
+      chargerAnnonces();
+    })
+    .subscribe();
+});
+
+function finishInit() {
+  renderCats();
+  renderDepotCats();
+  initTicker();
+  majCompteursHero();
+  initTypeSwitch();
+  document.addEventListener('keydown', e => { if(e.key==='Escape') { closeDetail(); closeBoutique(); closeDepot(); } });
+}
+
+// ════════════════════════════════════════════════════════════
+// CHARGEMENT ANNONCES
+// ════════════════════════════════════════════════════════════
+async function chargerAnnonces() {
+  document.getElementById('skeletonGrid').style.display = 'grid';
+  document.getElementById('annoncesGrid').style.display = 'none';
+
+  if (!CONFIG_OK || !sb) {
+    ANNONCES = JSON.parse(localStorage.getItem('tc_fallback') || '[]');
+    afficherAnnonces();
+    return;
+  }
+
+  try {
+    let q = sb.from('annonces').select('*').eq('actif', true);
+
+    if (filtreActif && filtreActif !== 'URGENT') q = q.eq('categorie', filtreActif);
+    if (filtreActif === 'URGENT') q = q.eq('urgent', true);
+    if (regionActive) q = q.eq('ville', regionActive);
+    if (searchQ) q = q.or(`titre.ilike.%${searchQ}%,description.ilike.%${searchQ}%,categorie.ilike.%${searchQ}%`);
+
+    if (sortMode === 'recent')    q = q.order('created_at', { ascending: false });
+    if (sortMode === 'prix_asc')  q = q.order('prix', { ascending: true });
+    if (sortMode === 'prix_desc') q = q.order('prix', { ascending: false });
+    if (sortMode === 'vues')      q = q.order('vues', { ascending: false });
+
+    const { data, error } = await q;
+    if (error) throw error;
+    ANNONCES = data || [];
+  } catch (e) {
+    console.error('Erreur Supabase:', e);
+    ANNONCES = JSON.parse(localStorage.getItem('tc_fallback') || '[]');
+    toast('⚠️', 'Mode hors ligne', 'Impossible de joindre la base de données.');
+  }
+
+  afficherAnnonces();
+}
+
+function afficherAnnonces() {
+  document.getElementById('skeletonGrid').style.display = 'none';
+  document.getElementById('annoncesGrid').style.display = 'grid';
+
+  const boosted = ANNONCES.filter(a => a.boosted || a.urgent);
+  const rest    = ANNONCES.filter(a => !a.boosted && !a.urgent);
+
+  // Section boostée
+  const secB = document.getElementById('sectionBoosted');
+  if (boosted.length > 0) {
+    secB.style.display = 'block';
+    document.getElementById('boostedGrid').innerHTML = boosted.map(cardHTML).join('');
+  } else {
+    secB.style.display = 'none';
+  }
+
+  // Grille principale
+  const grid = document.getElementById('annoncesGrid');
+  const empty = document.getElementById('emptyState');
+  document.getElementById('countLabel').textContent = `(${ANNONCES.length} annonce${ANNONCES.length !== 1 ? 's' : ''})`;
+
+  if (ANNONCES.length === 0) {
+    grid.innerHTML = '';
+    empty.classList.remove('hidden');
+  } else {
+    empty.classList.add('hidden');
+    grid.innerHTML = rest.map(cardHTML).join('');
+  }
+
+  majCompteursHero();
+  document.getElementById('tickerCount').textContent = ANNONCES.length.toLocaleString('fr-FR');
+}
+
+// ════════════════════════════════════════════════════════════
+// CARTE ANNONCE
+// ════════════════════════════════════════════════════════════
+function cardHTML(a) {
+  const waUrl = `https://wa.me/221${a.whatsapp}?text=${encodeURIComponent(`Salam, j'ai vu votre annonce "${a.titre}" sur TerangaCoin.sn. Toujours disponible ?`)}`;
+  const hasPro  = a.type_compte === 'pro';
+  const hasImg  = a.photo_url && a.photo_url.trim() !== '';
+
+  return `
+  <div class="card fade-up" onclick="openDetail('${a.id}')">
+    <!-- Image -->
+    <div class="img-ph h-40 sm:h-44 relative">
+      ${hasImg
+        ? `<img src="${a.photo_url}" alt="${a.titre}" class="w-full h-full object-cover" loading="lazy" onerror="this.parentElement.innerHTML='<span class=\\'text-4xl\\'>${a.emoji||'📦'}</span>'">`
+        : `<span class="text-5xl">${a.emoji || '📦'}</span>`
+      }
+      <div class="absolute top-2 left-2 flex flex-wrap gap-1">
+        ${a.urgent || a.boosted ? '<span class="badge-urgnt">🔥 URGENT</span>' : ''}
+        ${hasPro ? '<span class="badge-pro">⭐ Pro</span>' : ''}
+      </div>
+      <div class="absolute top-2 right-2 bg-white bg-opacity-90 text-xs text-gray-500 px-2 py-0.5 rounded-full font-medium">
+        👁 ${(a.vues || 0).toLocaleString('fr-FR')}
+      </div>
+    </div>
+    <!-- Corps -->
+    <div class="p-3">
+      <div class="flex items-center gap-1.5 mb-1">
+        ${hasPro ? '<span class="badge-pro">⭐ Pro</span>' : '<span class="text-xs text-gray-500 font-medium">Particulier</span>'}
+        ${a.wave_ok ? '<span class="text-xs bg-blue-100 text-blue-700 font-bold px-1.5 py-0.5 rounded-full">💳 Wave</span>' : ''}
+      </div>
+      <h3 class="font-bold text-sm text-encre leading-tight mb-1 line-clamp-2">${a.titre}</h3>
+      <div class="font-black text-base text-vert mb-1">${formatPrix(a.prix)}</div>
+      ${a.stock_dispo ? `<div class="text-xs text-green-600 font-semibold mb-1">📦 Stock : ${a.stock_dispo}</div>` : ''}
+      <div class="text-xs text-gray-400 mb-3">📍 ${a.ville}${a.quartier ? ', ' + a.quartier : ''} · ${dateRelative(a.created_at)}</div>
+      <!-- CTA -->
+      <div class="flex gap-2">
+        <a href="tel:+221${a.whatsapp}" onclick="event.stopPropagation();trackVue('${a.id}')"
+          class="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl border border-gray-200 text-xs font-semibold hover:bg-gray-50 transition text-gray-700">
+          📞 Appeler
+        </a>
+        <a href="${waUrl}" target="_blank" onclick="event.stopPropagation();trackVue('${a.id}')"
+          class="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl btn-vert text-xs font-bold">
+          💬 WhatsApp
+        </a>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ════════════════════════════════════════════════════════════
+// DETAIL ANNONCE
+// ════════════════════════════════════════════════════════════
+async function openDetail(id) {
+  const a = ANNONCES.find(x => x.id === id);
+  if (!a) return;
+  trackVue(id);
+
+  const waUrl = `https://wa.me/221${a.whatsapp}?text=${encodeURIComponent(`Salam, j'ai vu votre annonce "${a.titre}" (${formatPrix(a.prix)}) sur TerangaCoin.sn. Toujours disponible ?`)}`;
+  const hasPro = a.type_compte === 'pro';
+
+  document.getElementById('detailContent').innerHTML = `
+    <div class="grid md:grid-cols-3 gap-6">
+      <!-- Gauche -->
+      <div class="md:col-span-2 space-y-5">
+        <!-- Image grande -->
+        <div class="img-ph h-64 sm:h-80 rounded-2xl relative overflow-hidden">
+          ${a.photo_url
+            ? `<img src="${a.photo_url}" alt="${a.titre}" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<span class=\\\"text-8xl\\\">${a.emoji||'📦'}</span>'">`
+            : `<span class="text-8xl">${a.emoji || '📦'}</span>`
+          }
+          ${a.urgent || a.boosted ? '<span class="absolute top-4 left-4 badge-urgnt text-sm px-3 py-1 rounded-full">🔥 URGENT</span>' : ''}
+        </div>
+
+        <!-- Titre & prix -->
+        <div>
+          <div class="flex items-start justify-between gap-3 mb-2">
+            <h1 class="font-black text-2xl text-encre leading-tight">${a.titre}</h1>
+            <button onclick="ouvrirSignalement('${a.id}')" class="shrink-0 text-xs text-gray-400 hover:text-red-600 transition underline whitespace-nowrap">Signaler</button>
+          </div>
+          <div class="font-black text-3xl text-vert mb-1">${formatPrix(a.prix)}</div>
+          <div class="text-sm text-gray-500">📍 ${a.ville}${a.quartier ? ', ' + a.quartier : ''} · ${dateRelative(a.created_at)} · 👁 ${(a.vues || 0).toLocaleString('fr-FR')} vues</div>
+          ${a.stock_dispo ? `<div class="mt-1 text-sm text-green-600 font-semibold">📦 Stock disponible : ${a.stock_dispo}</div>` : ''}
+        </div>
+
+        <!-- Description -->
+        <div class="bg-gray-50 rounded-2xl p-5">
+          <h3 class="font-bold text-encre mb-3">Description</h3>
+          <p class="text-gray-700 text-sm leading-relaxed whitespace-pre-line">${a.description || 'Aucune description fournie.'}</p>
+        </div>
+
+        <!-- Options Pro boutique -->
+        ${hasPro ? `
+          <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+            <h3 class="font-bold text-amber-800 mb-3 flex items-center gap-2">🏪 Boutique Pro</h3>
+            <div class="flex flex-wrap gap-3 text-sm">
+              ${a.livraison ? `<span class="flex items-center gap-1.5 bg-white border border-amber-200 px-3 py-1.5 rounded-xl">🚚 ${a.livraison}</span>` : ''}
+              ${a.wave_ok ? `<span class="flex items-center gap-1.5 bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-xl text-blue-700 font-bold">💳 Wave accepté</span>` : ''}
+            </div>
+            ${a.stock_dispo ? `<button onclick="addPanier('${a.id}')" class="mt-3 w-full btn-or py-3 rounded-xl font-bold text-sm">🛒 Ajouter au panier</button>` : ''}
+          </div>
+        ` : ''}
+
+        <!-- Sécurité -->
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+          <h4 class="font-bold text-amber-800 flex items-center gap-2 mb-3">🛡️ Conseils de sécurité</h4>
+          <ul class="space-y-1.5 text-sm text-amber-900">
+            <li>✅ Payez uniquement après avoir vu l'article en personne</li>
+            <li>✅ Rencontrez le vendeur dans un lieu public animé</li>
+            <li>✅ Ne donnez jamais de code OM/Wave à un inconnu</li>
+            <li>✅ TerangaCoin ne demande jamais de paiement anticipé</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Droite : contact -->
+      <div class="space-y-4">
+        <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm sticky top-20">
+          <div class="font-black text-2xl text-vert mb-4">${formatPrix(a.prix)}</div>
+          <a href="${waUrl}" target="_blank" onclick="trackVue('${a.id}')"
+            class="flex items-center justify-center gap-2 w-full btn-vert py-4 rounded-xl font-bold text-base mb-3">
+            💬 Contacter via WhatsApp
+          </a>
+          <a href="tel:+221${a.whatsapp}" onclick="trackVue('${a.id}')"
+            class="flex items-center justify-center gap-2 w-full py-3 rounded-xl border-2 border-gray-200 font-bold text-sm hover:bg-gray-50 transition mb-4">
+            📞 Appeler directement
+          </a>
+
+          <!-- Vendeur -->
+          <div class="pt-4 border-t border-gray-100">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-11 h-11 rounded-full bg-vert flex items-center justify-center text-white font-black text-sm">
+                ${(a.vendeur || 'V').charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <div class="font-bold text-sm text-encre">${a.vendeur || 'Vendeur'}</div>
+                <div class="text-xs text-gray-500">${hasPro ? '⭐ Compte Pro' : 'Particulier'}</div>
+              </div>
+              ${hasPro ? '<span class="ml-auto badge-pro">Pro</span>' : ''}
+            </div>
+
+            ${hasPro ? `
+              <button onclick="openBoutique('${a.id}')" class="w-full py-2.5 rounded-xl border border-amber-300 text-amber-700 font-bold text-sm hover:bg-amber-50 transition">
+                🏪 Voir toute la boutique
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('pageDetail').style.display = 'block';
+  document.getElementById('pageDetail').scrollTop = 0;
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDetail() {
+  document.getElementById('pageDetail').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+// ════════════════════════════════════════════════════════════
+// TRACKER VUES
+// ════════════════════════════════════════════════════════════
+async function trackVue(id) {
+  if (!CONFIG_OK || !sb) return;
+  await sb.rpc('incrementer_vues', { annonce_id: id }).catch(() => {});
+}
+
+// ════════════════════════════════════════════════════════════
+// DÉPÔT ANNONCE
+// ════════════════════════════════════════════════════════════
+function openDepot() {
+  document.getElementById('depotModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  resetDepot();
+}
+function closeDepot() {
+  document.getElementById('depotModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+function resetDepot() {
+  depotStep = 1; selectedCat = ''; photoUrl = '';
+  ['depotS1','depotS2','depotS3'].forEach((s, i) => document.getElementById(s).style.display = i === 0 ? 'block' : 'none');
+  updateStepper(1);
+  renderDepotCats();
+  ['dTitre','dDesc','dPrix','dQuartier','dWA','dVendeur','dNomBoutique'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const sel = document.getElementById('dVille'); if (sel) sel.value = '';
+  const boost = document.getElementById('dBoost'); if (boost) boost.checked = false;
+  const waveOpt = document.getElementById('dWaveOption'); if (waveOpt) waveOpt.checked = false;
+  document.getElementById('photoPreviewImg').classList.add('hidden');
+  document.getElementById('photoDropContent').style.display = '';
+  photoUrl = '';
+}
+
+function dNext(to) {
+  if (to === 2 && depotStep === 1) {
+    if (!selectedCat) { toast('⚠️', 'Catégorie requise', 'Choisissez une catégorie.'); return; }
+    if (!document.getElementById('dTitre').value.trim()) { toast('⚠️', 'Titre requis', 'Ajoutez un titre.'); return; }
+    if (!document.getElementById('dDesc').value.trim()) { toast('⚠️', 'Description requise', 'Décrivez votre annonce.'); return; }
+  }
+  if (to === 3 && depotStep === 2) {
+    if (!document.getElementById('dPrix').value) { toast('⚠️', 'Prix requis', 'Indiquez un prix.'); return; }
+    if (!document.getElementById('dVille').value) { toast('⚠️', 'Ville requise', 'Choisissez une ville.'); return; }
+  }
+  depotStep = to;
+  ['depotS1','depotS2','depotS3'].forEach((s, i) => document.getElementById(s).style.display = (i + 1 === to) ? 'block' : 'none');
+  updateStepper(to);
+}
+
+function updateStepper(active) {
+  [1,2,3].forEach(i => {
+    const dot = document.getElementById(`d${i}`);
+    dot.className = 'step-dot ' + (i < active ? 'done' : i === active ? 'active' : 'pending');
+  });
+  [1,2].forEach(i => {
+    document.getElementById(`dl${i}`).className = 'step-line ' + (i < active ? 'done' : '');
+  });
+}
+
+// ── PHOTO UPLOAD ─────────────────────────────────────────────
+function previewPhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = document.getElementById('photoPreviewImg');
+    img.src = e.target.result;
+    img.classList.remove('hidden');
+    document.getElementById('photoDropContent').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function handlePhotoDrop(e) {
+  e.preventDefault();
+  document.getElementById('photoDrop').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) {
+    document.getElementById('photoFile').files = e.dataTransfer.files;
+    previewPhoto({ files: [file] });
+  }
+}
+
+async function uploadPhoto(file) {
+  if (!CONFIG.CLOUDINARY_NAME || CONFIG.CLOUDINARY_NAME === 'VOTRE_CLOUD_NAME') {
+    // Pas de Cloudinary configuré → convertir en base64 (fallback)
+    return new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result);
+      reader.readAsDataURL(file);
+    });
+  }
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('upload_preset', CONFIG.CLOUDINARY_PRESET);
+  fd.append('folder', 'teranga');
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CONFIG.CLOUDINARY_NAME}/image/upload`, { method: 'POST', body: fd });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.secure_url;
+}
+
+// ── PUBLIER ──────────────────────────────────────────────────
+async function publierAnnonce() {
+  const wa      = document.getElementById('dWA').value.trim().replace(/\s/g, '');
+  const vendeur = document.getElementById('dVendeur').value.trim();
+  if (!wa || wa.length < 8) { toast('⚠️', 'WhatsApp requis', 'Entrez votre numéro valide.'); return; }
+  if (!vendeur) { toast('⚠️', 'Nom requis', 'Entrez votre nom ou celui de votre boutique.'); return; }
+
+  const btn = document.getElementById('btnPublier');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner mx-auto"></div>';
+
+  const isPro  = document.querySelector('input[name="typeCompte"]:checked')?.value === 'pro';
+  const boost  = document.getElementById('dBoost').checked;
+  const fileInput = document.getElementById('photoFile');
+  let url = '';
+
+  // Upload photo si sélectionnée
+  if (fileInput.files[0]) {
+    try {
+      document.getElementById('photoUploadStatus').classList.remove('hidden');
+      url = await uploadPhoto(fileInput.files[0]);
+      document.getElementById('photoUploadStatus').classList.add('hidden');
+    } catch (e) {
+      toast('⚠️', 'Erreur photo', 'Impossible d\'uploader la photo. Publication sans photo.');
+    }
+  }
+
+  const cat = CATS.find(c => c.nom === selectedCat);
+  const annonce = {
+    titre:       document.getElementById('dTitre').value.trim(),
+    description: document.getElementById('dDesc').value.trim(),
+    prix:        parseInt(document.getElementById('dPrix').value) || 0,
+    ville:       document.getElementById('dVille').value,
+    quartier:    document.getElementById('dQuartier').value.trim(),
+    categorie:   selectedCat,
+    emoji:       cat?.emoji || '📦',
+    type_compte: isPro ? 'pro' : 'particulier',
+    whatsapp:    wa.replace(/^0+/, ''),
+    vendeur:     vendeur,
+    photo_url:   url,
+    boosted:     boost,
+    urgent:      boost,
+    vues:        0,
+    actif:       true,
+    livraison:   isPro ? document.getElementById('dLivraison').value : null,
+    wave_ok:     isPro ? document.getElementById('dWaveOption').checked : false,
+    nom_boutique:isPro ? document.getElementById('dNomBoutique').value.trim() : null,
+    stock_dispo: null,
+  };
+
+  try {
+    if (CONFIG_OK && sb) {
+      const { data, error } = await sb.from('annonces').insert([annonce]).select().single();
+      if (error) throw error;
+      annonce.id = data.id;
+      // Notifier admin sur WhatsApp
+      await notifierAdmin(annonce);
+    } else {
+      // Fallback localStorage
+      annonce.id = 'L' + Date.now();
+      annonce.created_at = new Date().toISOString();
+      const saved = JSON.parse(localStorage.getItem('tc_fallback') || '[]');
+      saved.unshift(annonce);
+      localStorage.setItem('tc_fallback', JSON.stringify(saved));
+      ANNONCES.unshift(annonce);
+      afficherAnnonces();
+    }
+
+    closeDepot();
+    toast('🎉', 'Annonce publiée !', 'Votre annonce est maintenant en ligne.');
+
+    if (boost) {
+      setTimeout(() => document.getElementById('boostModal').style.display = 'flex', 400);
+    }
+
+    await chargerAnnonces();
+
+  } catch (e) {
+    toast('❌', 'Erreur de publication', e.message || 'Réessayez ou contactez le support.');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<span>📢 Publier gratuitement</span>';
+}
+
+// ── NOTIFICATION ADMIN ───────────────────────────────────────
+async function notifierAdmin(a) {
+  if (!CONFIG.CALLMEBOT_KEY) return;
+  const msg = `🆕 Nouvelle annonce TerangaCoin.sn\n\n📦 ${a.titre}\n💰 ${formatPrix(a.prix)}\n📍 ${a.ville}\n📞 +221${a.whatsapp}\n🏷️ ${a.categorie}\n${a.boosted ? '🔥 BOOSTÉE' : ''}`;
+  const url = `https://api.callmebot.com/whatsapp.php?phone=${CONFIG.ADMIN_WA}&text=${encodeURIComponent(msg)}&apikey=${CONFIG.CALLMEBOT_KEY}`;
+  await fetch(url).catch(() => {});
+}
+
+// ════════════════════════════════════════════════════════════
+// BOUTIQUE PRO
+// ════════════════════════════════════════════════════════════
+async function openBoutique(annonceId) {
+  const anchor = ANNONCES.find(a => a.id === annonceId);
+  if (!anchor) return;
+
+  let produits = ANNONCES.filter(a => a.whatsapp === anchor.whatsapp);
+
+  if (CONFIG_OK && sb) {
+    const { data } = await sb.from('annonces').select('*').eq('whatsapp', anchor.whatsapp).eq('actif', true);
+    if (data) produits = data;
+  }
+
+  currentBoutique = anchor.whatsapp;
+
+  document.getElementById('boutiqueContent').innerHTML = `
+    <div class="min-h-screen bg-gray-50">
+      <div style="background:linear-gradient(135deg,#00853F,#006830);height:130px;position:relative">
+        <div class="max-w-5xl mx-auto px-4 flex items-end pb-4 h-full">
+          <div class="flex items-center gap-4">
+            <div class="w-16 h-16 rounded-2xl bg-white flex items-center justify-center text-3xl shadow-lg">🏪</div>
+            <div>
+              <h1 class="font-black text-2xl text-white">${anchor.nom_boutique || anchor.vendeur}</h1>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="text-green-100 text-sm">⭐ Vendeur Pro · ${produits.length} produit${produits.length !== 1 ? 's' : ''}</span>
+                ${anchor.wave_ok ? '<span class="bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">💳 Wave</span>' : ''}
+              </div>
+            </div>
+          </div>
+        </div>
+        <button onclick="closeBoutique()" class="absolute top-4 right-4 bg-white bg-opacity-20 text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-opacity-30 transition">
+          ← Retour
+        </button>
+      </div>
+
+      <div class="max-w-5xl mx-auto px-4 py-6">
+        ${anchor.livraison ? `
+          <div class="bg-white border border-gray-100 rounded-2xl p-4 mb-6 flex items-center gap-3 shadow-sm">
+            <span class="text-2xl">🚚</span>
+            <div><div class="font-bold text-sm">Options de livraison</div><div class="text-sm text-gray-600">${anchor.livraison}</div></div>
+          </div>` : ''}
+
+        <h2 class="font-black text-xl text-encre mb-4">Produits disponibles (${produits.length})</h2>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          ${produits.map(p => `
+            <div class="card">
+              <div class="img-ph h-36">
+                ${p.photo_url ? `<img src="${p.photo_url}" class="w-full h-full object-cover" loading="lazy">` : `<span class="text-4xl">${p.emoji || '📦'}</span>`}
+              </div>
+              <div class="p-3">
+                <div class="font-bold text-sm text-encre leading-tight mb-1 line-clamp-2">${p.titre}</div>
+                <div class="font-black text-vert text-base mb-1">${formatPrix(p.prix)}</div>
+                ${p.stock_dispo ? `<div class="text-xs text-green-600 font-semibold mb-2">📦 ${p.stock_dispo} en stock</div>` : ''}
+                <button onclick="addPanier('${p.id}')" class="w-full py-2 rounded-xl btn-vert text-xs font-bold">+ Ajouter au panier</button>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById('pageBoutique').style.display = 'block';
+  document.getElementById('pageBoutique').scrollTop = 0;
+}
+function closeBoutique() { document.getElementById('pageBoutique').style.display = 'none'; }
+
+// ════════════════════════════════════════════════════════════
+// PANIER
+// ════════════════════════════════════════════════════════════
+function addPanier(id) {
+  const a = ANNONCES.find(x => x.id === id);
+  if (!a) return;
+  const ex = panier.find(p => p.id === id);
+  if (ex) ex.qty++;
+  else panier.push({ id, titre: a.titre, prix: a.prix, emoji: a.emoji || '📦', qty: 1 });
+  majPanier();
+  toast('🛒', 'Ajouté au panier', `${a.titre.substring(0, 30)}...`);
+  document.getElementById('btnPanier').style.display = 'block';
+}
+
+function majPanier() {
+  const total = panier.reduce((s, p) => s + p.prix * p.qty, 0);
+  const qty   = panier.reduce((s, p) => s + p.qty, 0);
+  document.getElementById('panierCount').textContent = qty;
+  document.getElementById('cartTotalLabel').textContent = formatPrix(total);
+  document.getElementById('cartQtyLabel').textContent = `${qty} article${qty !== 1 ? 's' : ''}`;
+  const bar = document.getElementById('cartBar');
+  qty > 0 ? bar.classList.add('open') : bar.classList.remove('open');
+}
+
+function togglePanier() {
+  if (panier.length === 0) return;
+  const details = panier.map(p => `• ${p.qty}x ${p.emoji} ${p.titre} = ${formatPrix(p.prix * p.qty)}`).join('\n');
+  const total = panier.reduce((s, p) => s + p.prix * p.qty, 0);
+  toast('🛒', `Panier (${panier.length} article${panier.length !== 1 ? 's' : ''})`, `Total : ${formatPrix(total)}`);
+}
+
+function commanderWA() {
+  if (panier.length === 0) return;
+  const lines = panier.map(p => `${p.qty}x ${p.titre} = ${formatPrix(p.prix * p.qty)}`).join('\n');
+  const total = panier.reduce((s, p) => s + p.prix * p.qty, 0);
+  const waNum = currentBoutique || CONFIG.ADMIN_WA;
+  const msg = `Salam 🙏\nJe voudrais commander via TerangaCoin.sn :\n\n${lines}\n\n*Total : ${formatPrix(total)}*\n\nLivraison possible ?`;
+  window.open(`https://wa.me/221${waNum}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+// ════════════════════════════════════════════════════════════
+// FILTRES & RECHERCHE
+// ════════════════════════════════════════════════════════════
+function filterCat(cat, btn) {
+  filtreActif = cat;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('on'));
+  if (btn) btn.classList.add('on');
+  chargerAnnonces();
+  document.getElementById('annoncesGrid').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function filterRegion(region) {
+  regionActive = region;
+  chargerAnnonces();
+}
+
+function handleSearch(q) {
+  searchQ = q;
+  if (document.getElementById('navSearch')) document.getElementById('navSearch').value = q;
+  if (document.getElementById('heroSearchInput')) document.getElementById('heroSearchInput').value = q;
+  chargerAnnonces();
+}
+
+function sortAnnonces(mode) {
+  sortMode = mode;
+  chargerAnnonces();
+}
+
+// ════════════════════════════════════════════════════════════
+// SIGNALEMENT
+// ════════════════════════════════════════════════════════════
+function ouvrirSignalement(id) {
+  currentSignalId = id;
+  document.getElementById('signalModal').style.display = 'flex';
+}
+
+async function envoyerSignalement() {
+  const checked = document.querySelector('input[name="sigRaison"]:checked');
+  const raison = checked ? checked.value : 'Non précisée';
+
+  if (CONFIG_OK && sb) {
+    await sb.from('signalements').insert([{
+      annonce_id: currentSignalId,
+      raison:     raison,
+    }]).catch(() => {});
+  } else {
+    const sigs = JSON.parse(localStorage.getItem('tc_signalements') || '[]');
+    sigs.push({ annonce_id: currentSignalId, raison, ts: Date.now() });
+    localStorage.setItem('tc_signalements', JSON.stringify(sigs));
+  }
+
+  document.getElementById('signalModal').style.display = 'none';
+  toast('✅', 'Signalement envoyé', 'Notre équipe examine cette annonce sous 24h.');
+}
+
+// ════════════════════════════════════════════════════════════
+// ADMIN
+// ════════════════════════════════════════════════════════════
+function ouvrirAdmin() {
+  document.getElementById('adminLoginModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('adminPwInput').focus(), 100);
+}
+
+function checkAdminPw() {
+  if (document.getElementById('adminPwInput').value === CONFIG.ADMIN_PASSWORD) {
+    document.getElementById('adminLoginModal').style.display = 'none';
+    document.getElementById('adminPwInput').value = '';
+    lancerAdmin();
+  } else {
+    const inp = document.getElementById('adminPwInput');
+    inp.style.borderColor = '#ef4444';
+    inp.value = '';
+    inp.placeholder = '❌ Mot de passe incorrect';
+    setTimeout(() => { inp.style.borderColor = ''; inp.placeholder = 'Mot de passe...'; }, 2000);
+  }
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const pwInp = document.getElementById('adminPwInput');
+  if (pwInp) pwInp.addEventListener('keydown', e => { if (e.key === 'Enter') checkAdminPw(); });
+});
+
+async function lancerAdmin() {
+  document.getElementById('pageAdmin').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+  document.getElementById('adminHeure').textContent = new Date().toLocaleString('fr-FR');
+
+  // Vérif DB dans admin
+  if (CONFIG_OK && sb) {
+    document.getElementById('adminDbOk').textContent = '🟢 Supabase OK';
+    document.getElementById('adminDbOk').className = 'db-badge db-ok';
+  } else {
+    document.getElementById('adminDbOk').textContent = '🔴 Hors ligne';
+    document.getElementById('adminDbOk').className = 'db-badge db-err';
+  }
+
+  await majKPIs();
+  adminOng('annonces', document.getElementById('aTabAnn'));
+}
+
+function closeAdmin() {
+  document.getElementById('pageAdmin').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+async function majKPIs() {
+  let all = ANNONCES;
+  if (CONFIG_OK && sb) {
+    const { data } = await sb.from('annonces').select('*').eq('actif', true);
+    if (data) all = data;
+  }
+  const today = new Date().toDateString();
+  const auj     = all.filter(a => a.created_at && new Date(a.created_at).toDateString() === today).length;
+  const boosted  = all.filter(a => a.boosted || a.urgent).length;
+  const vues     = all.reduce((s, a) => s + (a.vues || 0), 0);
+  const pro      = all.filter(a => a.type_compte === 'pro').length;
+  const ca       = boosted * 1000;
+
+  document.getElementById('kTotal').textContent   = all.length;
+  document.getElementById('kAuj').textContent     = auj;
+  document.getElementById('kBoosted').textContent = boosted;
+  document.getElementById('kVues').textContent    = vues.toLocaleString('fr-FR');
+  document.getElementById('kPro').textContent     = pro;
+  document.getElementById('kCA').textContent      = ca.toLocaleString('fr-FR') + ' FCFA';
+}
+
+async function adminOng(ong, btn) {
+  document.querySelectorAll('.admin-tab').forEach(b => {
+    b.style.background = ''; b.style.color = '';
+    b.className = 'admin-tab px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap btn-ghost';
+  });
+  btn.style.background = '#00853F'; btn.style.color = 'white';
+  btn.className = 'admin-tab px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap active';
+
+  let all = ANNONCES;
+  if (CONFIG_OK && sb) {
+    const { data } = await sb.from('annonces').select('*').eq('actif', true).order('created_at', { ascending: false });
+    if (data) all = data;
+  }
+
+  const c = document.getElementById('adminContent');
+  await majKPIs();
+
+  if (ong === 'annonces') {
+    c.innerHTML = `
+      <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div class="p-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
+          <div class="font-black text-encre">📋 Annonces (${all.length})</div>
+          <div class="flex gap-2 flex-wrap">
+            <input id="aSearch" type="text" placeholder="🔍 Rechercher..." oninput="adminFiltrer(event.target.value)"
+              class="px-3 py-2 text-xs rounded-xl" style="width:180px">
+            <select id="aCatF" onchange="adminFiltrer(document.getElementById('aSearch').value)" class="px-3 py-2 text-xs rounded-xl cursor-pointer">
+              <option value="">Toutes catégories</option>
+              ${CATS.map(c => `<option value="${c.nom}">${c.emoji} ${c.nom}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm" style="border-collapse:collapse">
+            <thead>
+              <tr class="bg-gray-50 text-xs text-gray-500 uppercase border-b border-gray-100">
+                <th class="p-3 text-left font-bold">Annonce</th>
+                <th class="p-3 text-left font-bold">Catégorie</th>
+                <th class="p-3 text-left font-bold">Prix</th>
+                <th class="p-3 text-left font-bold">Ville</th>
+                <th class="p-3 text-left font-bold">WhatsApp</th>
+                <th class="p-3 text-left font-bold">Vues</th>
+                <th class="p-3 text-left font-bold">Date</th>
+                <th class="p-3 text-left font-bold">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="adminTbody">
+              ${all.map(adminRow).join('')}
+              ${all.length === 0 ? '<tr><td colspan="8" class="p-8 text-center text-gray-400">Aucune annonce publiée pour l\'instant.</td></tr>' : ''}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+
+  if (ong === 'boost') {
+    const boosted = all.filter(a => a.boosted || a.urgent);
+    const nonB    = all.filter(a => !a.boosted && !a.urgent);
+    c.innerHTML = `
+      <div class="space-y-4">
+        <div class="bg-white border border-gray-200 rounded-xl p-4">
+          <div class="font-black text-encre mb-4">🔥 Annonces boostées (${boosted.length})</div>
+          ${boosted.length === 0 ? '<p class="text-gray-400 text-sm text-center py-4">Aucune annonce boostée actuellement.</p>' : ''}
+          <div class="space-y-2">
+            ${boosted.map(a => `
+              <div class="flex items-center gap-3 p-3 bg-amber-50 rounded-xl border border-amber-200">
+                <span class="text-xl">${a.emoji || '📦'}</span>
+                <div class="flex-1 min-w-0">
+                  <div class="font-bold text-sm truncate">${a.titre}</div>
+                  <div class="text-xs text-gray-500">${a.ville} · ${formatPrix(a.prix)}</div>
+                </div>
+                <span class="badge-urgnt">🔥 URGENT</span>
+                <button onclick="adminUnboost('${a.id}')" class="px-3 py-1.5 rounded-lg border border-red-300 text-red-600 text-xs font-bold hover:bg-red-50 transition">Retirer</button>
+              </div>`).join('')}
+          </div>
+        </div>
+        <div class="bg-white border border-gray-200 rounded-xl p-4">
+          <div class="font-black text-encre mb-1">⚡ Booster manuellement</div>
+          <p class="text-xs text-gray-500 mb-3">Entrez l'ID d'une annonce pour l'activer en mode URGENT.</p>
+          <div class="flex gap-2 mb-4">
+            <input id="boostIdManuel" type="text" placeholder="ID annonce" class="flex-1 px-3 py-2.5 text-sm rounded-xl">
+            <button onclick="adminBoostManuel()" class="btn-or px-4 py-2.5 rounded-xl font-bold text-sm">🔥 Booster</button>
+          </div>
+          <div class="space-y-2 max-h-60 overflow-y-auto">
+            ${nonB.map(a => `
+              <div class="flex items-center gap-2 p-2 border border-gray-100 rounded-xl text-xs">
+                <span class="font-mono bg-gray-100 px-2 py-0.5 rounded text-xs">${a.id.substring(0,8)}...</span>
+                <span>${a.emoji || '📦'}</span>
+                <span class="flex-1 truncate font-medium">${a.titre}</span>
+                <button onclick="adminBoostId('${a.id}')" class="px-2 py-1 rounded-lg btn-vert text-xs">Booster</button>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  if (ong === 'signalements') {
+    let sigs = [];
+    if (CONFIG_OK && sb) {
+      const { data } = await sb.from('signalements').select('*,annonces(titre)').order('created_at', { ascending: false });
+      if (data) sigs = data;
+    } else {
+      sigs = JSON.parse(localStorage.getItem('tc_signalements') || '[]');
+    }
+    c.innerHTML = `
+      <div class="bg-white border border-gray-200 rounded-xl p-4">
+        <div class="font-black text-encre mb-4">🚨 Signalements reçus (${sigs.length})</div>
+        ${sigs.length === 0 ? '<div class="text-center py-8 text-gray-400"><div class="text-4xl mb-2">✅</div><div>Aucun signalement pour l\'instant.</div></div>' : ''}
+        <div class="space-y-3">
+          ${sigs.map((s, i) => `
+            <div class="border border-red-100 bg-red-50 rounded-xl p-4">
+              <div class="flex items-start justify-between gap-3 flex-wrap">
+                <div>
+                  <div class="font-bold text-red-700 text-sm">🚨 Annonce #${(s.annonce_id || s.annonceId || '?').toString().substring(0,8)}...</div>
+                  ${s.annonces ? `<div class="text-xs text-gray-600 mt-0.5">${s.annonces.titre}</div>` : ''}
+                  <div class="text-sm mt-1">Raison : <strong>${s.raison}</strong></div>
+                  <div class="text-xs text-gray-500 mt-0.5">${s.created_at ? new Date(s.created_at).toLocaleString('fr-FR') : new Date(s.ts || 0).toLocaleString('fr-FR')}</div>
+                </div>
+                <div class="flex gap-2">
+                  <button onclick="adminSupprimerAnnonce('${s.annonce_id || s.annonceId}')" class="px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-bold">🗑 Supprimer</button>
+                  <button onclick="adminIgnorerSig('${s.id || i}')" class="px-3 py-1.5 rounded-lg btn-ghost text-xs font-bold">Ignorer</button>
+                </div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+  }
+
+  if (ong === 'stats') {
+    const parCat   = {};
+    const parVille = {};
+    all.forEach(a => {
+      parCat[a.categorie]  = (parCat[a.categorie] || 0) + 1;
+      parVille[a.ville]    = (parVille[a.ville] || 0) + 1;
+    });
+    const maxC = Math.max(...Object.values(parCat), 1);
+    const maxV = Math.max(...Object.values(parVille), 1);
+    const sortCat   = Object.entries(parCat).sort((a,b) => b[1]-a[1]).slice(0,8);
+    const sortVille = Object.entries(parVille).sort((a,b) => b[1]-a[1]).slice(0,8);
+    c.innerHTML = `
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div class="bg-white border border-gray-200 rounded-xl p-4">
+          <div class="font-black text-encre mb-4">📊 Par catégorie</div>
+          <div class="space-y-3">
+            ${sortCat.length === 0 ? '<p class="text-gray-400 text-sm">Aucune donnée</p>' : ''}
+            ${sortCat.map(([k,v]) => `
+              <div>
+                <div class="flex justify-between text-sm mb-1"><span class="font-medium">${k}</span><span class="text-gray-500">${v}</span></div>
+                <div class="h-1.5 bg-gray-100 rounded-full"><div class="h-1.5 bg-vert rounded-full" style="width:${Math.round(v/maxC*100)}%"></div></div>
+              </div>`).join('')}
+          </div>
+        </div>
+        <div class="bg-white border border-gray-200 rounded-xl p-4">
+          <div class="font-black text-encre mb-4">📍 Par ville</div>
+          <div class="space-y-3">
+            ${sortVille.length === 0 ? '<p class="text-gray-400 text-sm">Aucune donnée</p>' : ''}
+            ${sortVille.map(([k,v]) => `
+              <div>
+                <div class="flex justify-between text-sm mb-1"><span class="font-medium">${k}</span><span class="text-gray-500">${v}</span></div>
+                <div class="h-1.5 bg-gray-100 rounded-full"><div class="h-1.5 rounded-full" style="width:${Math.round(v/maxV*100)}%;background:#F97316"></div></div>
+              </div>`).join('')}
+          </div>
+        </div>
+        <div class="bg-white border border-gray-200 rounded-xl p-4 sm:col-span-2">
+          <div class="font-black text-encre mb-4">📞 Contacts annonceurs</div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm" style="border-collapse:collapse">
+              <thead><tr class="bg-gray-50 text-xs text-gray-500 uppercase"><th class="p-2.5 text-left font-bold">Vendeur</th><th class="p-2.5 text-left font-bold">WhatsApp</th><th class="p-2.5 text-left font-bold">Type</th><th class="p-2.5 text-left font-bold">Vues</th><th class="p-2.5 text-left font-bold">Annonces</th></tr></thead>
+              <tbody>
+                ${all.map(a => `<tr class="border-b border-gray-50 hover:bg-gray-50 transition"><td class="p-2.5 font-semibold">${a.vendeur || '—'}</td><td class="p-2.5"><a href="https://wa.me/221${a.whatsapp}" target="_blank" class="text-vert font-bold hover:underline">+221 ${a.whatsapp}</a></td><td class="p-2.5"><span class="${a.type_compte==='pro'?'badge-pro':'text-xs text-gray-500'}">${a.type_compte==='pro'?'⭐ Pro':'Particulier'}</span></td><td class="p-2.5 text-gray-500">👁 ${a.vues||0}</td><td class="p-2.5 text-gray-500">${all.filter(x=>x.whatsapp===a.whatsapp).length}</td></tr>`).join('')}
+                ${all.length === 0 ? '<tr><td colspan="5" class="p-6 text-center text-gray-400">Aucune donnée</td></tr>' : ''}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  if (ong === 'message') {
+    c.innerHTML = `
+      <div class="bg-white border border-gray-200 rounded-xl p-5 max-w-lg">
+        <div class="font-black text-encre mb-1">📡 Message global</div>
+        <p class="text-sm text-gray-500 mb-4">Rédigez un message à envoyer à vos annonceurs via WhatsApp Business (+221 70 916 57 45).</p>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1.5">Objet</label>
+            <input id="msgObjet" type="text" placeholder="Ex: Nouvelle fonctionnalité, Promotion..." class="w-full px-4 py-3 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1.5">Message</label>
+            <textarea id="msgTexte" rows="5" placeholder="Salam ! Voici un message important de TerangaCoin.sn..." class="w-full px-4 py-3 text-sm resize-none"></textarea>
+          </div>
+          <div class="flex gap-2 flex-wrap">
+            <button onclick="copierMsg()" class="flex-1 btn-vert py-3 rounded-xl font-bold text-sm">📋 Copier le message</button>
+            <a id="waLienMsg" href="https://wa.me/221709165745" target="_blank"
+              class="flex-1 flex items-center justify-center gap-1 py-3 rounded-xl font-bold text-sm text-white" style="background:#25D366">
+              💬 Ouvrir WhatsApp
+            </a>
+          </div>
+          <div class="bg-green-50 border border-green-200 rounded-xl p-3 text-xs text-green-800">
+            💡 Copiez le message → ouvrez votre liste de diffusion WhatsApp Business → collez pour contacter tous vos vendeurs.
+          </div>
+        </div>
+      </div>`;
+  }
+}
+
+// ── Helpers admin ────────────────────────────────────────────
+function adminRow(a) {
+  return `
+    <tr class="border-b border-gray-50 hover:bg-gray-50 transition">
+      <td class="p-3 max-w-xs">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">${a.emoji || '📦'}</span>
+          <div>
+            <div class="font-semibold text-sm truncate max-w-40" title="${a.titre}">${a.titre}</div>
+            <div class="text-xs text-gray-400">${a.vendeur || '—'}</div>
+          </div>
+        </div>
+      </td>
+      <td class="p-3"><span class="bg-blue-50 text-blue-700 text-xs font-bold px-2 py-0.5 rounded-full">${a.categorie}</span></td>
+      <td class="p-3 font-bold text-vert text-sm">${formatPrix(a.prix)}</td>
+      <td class="p-3 text-sm text-gray-600">${a.ville}${a.quartier ? ', '+a.quartier : ''}</td>
+      <td class="p-3"><a href="https://wa.me/221${a.whatsapp}" target="_blank" class="text-vert font-bold text-xs hover:underline">+221 ${a.whatsapp}</a></td>
+      <td class="p-3 text-sm text-gray-500">👁 ${a.vues || 0}</td>
+      <td class="p-3 text-xs text-gray-400">${a.created_at ? new Date(a.created_at).toLocaleDateString('fr-FR') : '—'}</td>
+      <td class="p-3">
+        <div class="flex gap-1.5">
+          ${!(a.boosted||a.urgent) ? `<button onclick="adminBoostId('${a.id}')" title="Booster" class="px-2 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-xs font-bold text-amber-700 hover:bg-amber-100 transition">🔥</button>` : `<button onclick="adminUnboost('${a.id}')" title="Retirer boost" class="px-2 py-1.5 rounded-lg bg-red-50 border border-red-200 text-xs font-bold text-red-600 hover:bg-red-100 transition">⬇</button>`}
+          <button onclick="adminSupprimerAnnonce('${a.id}')" title="Supprimer" class="px-2 py-1.5 rounded-lg bg-red-50 border border-red-200 text-xs font-bold text-red-600 hover:bg-red-100 transition">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+}
+
+function adminFiltrer(q) {
+  q = q.toLowerCase();
+  const cat = document.getElementById('aCatF')?.value || '';
+  let all = ANNONCES;
+  if (q) all = all.filter(a => a.titre?.toLowerCase().includes(q) || a.ville?.toLowerCase().includes(q));
+  if (cat) all = all.filter(a => a.categorie === cat);
+  const tbody = document.getElementById('adminTbody');
+  if (tbody) tbody.innerHTML = all.map(adminRow).join('') || '<tr><td colspan="8" class="p-6 text-center text-gray-400">Aucun résultat.</td></tr>';
+}
+
+async function adminBoostId(id) {
+  if (CONFIG_OK && sb) {
+    await sb.from('annonces').update({ boosted: true, urgent: true }).eq('id', id);
+  } else {
+    const i = ANNONCES.findIndex(a => a.id === id);
+    if (i >= 0) { ANNONCES[i].boosted = true; ANNONCES[i].urgent = true; }
+  }
+  toast('🔥', 'Annonce boostée', 'Elle apparaît maintenant en tête de liste.');
+  await adminOng('boost', document.getElementById('aTabBoost'));
+  afficherAnnonces();
+}
+
+async function adminUnboost(id) {
+  if (CONFIG_OK && sb) {
+    await sb.from('annonces').update({ boosted: false, urgent: false }).eq('id', id);
+  } else {
+    const i = ANNONCES.findIndex(a => a.id === id);
+    if (i >= 0) { ANNONCES[i].boosted = false; ANNONCES[i].urgent = false; }
+  }
+  toast('✅', 'Boost retiré', 'L\'annonce est revenue en position normale.');
+  await adminOng('boost', document.getElementById('aTabBoost'));
+  afficherAnnonces();
+}
+
+function adminBoostManuel() {
+  const id = document.getElementById('boostIdManuel')?.value.trim();
+  if (id) adminBoostId(id);
+  else toast('⚠️', 'ID manquant', 'Entrez l\'identifiant de l\'annonce.');
+}
+
+async function adminSupprimerAnnonce(id) {
+  if (!confirm('Supprimer définitivement cette annonce ?')) return;
+  if (CONFIG_OK && sb) {
+    await sb.from('annonces').update({ actif: false }).eq('id', id);
+  } else {
+    const saved = JSON.parse(localStorage.getItem('tc_fallback') || '[]').filter(a => a.id !== id);
+    localStorage.setItem('tc_fallback', JSON.stringify(saved));
+    ANNONCES = ANNONCES.filter(a => a.id !== id);
+  }
+  toast('🗑️', 'Annonce supprimée', 'Retirée du site.');
+  await chargerAnnonces();
+  await adminOng('annonces', document.getElementById('aTabAnn'));
+}
+
+async function adminIgnorerSig(id) {
+  if (CONFIG_OK && sb) {
+    await sb.from('signalements').delete().eq('id', id).catch(() => {});
+  }
+  toast('✅', 'Signalement ignoré', 'Archivé.');
+  await adminOng('signalements', document.getElementById('aTabSig'));
+}
+
+function copierMsg() {
+  const objet  = document.getElementById('msgObjet')?.value || '';
+  const texte  = document.getElementById('msgTexte')?.value || '';
+  const complet = `${objet ? objet + '\n\n' : ''}${texte}\n\n— TerangaCoin.sn`;
+  navigator.clipboard.writeText(complet).then(() => toast('📋', 'Copié !', 'Collez dans WhatsApp Business.'));
+  const lien = document.getElementById('waLienMsg');
+  if (lien) lien.href = `https://wa.me/221709165745?text=${encodeURIComponent(complet)}`;
+}
+
+async function adminExport() {
+  let all = ANNONCES;
+  if (CONFIG_OK && sb) {
+    const { data } = await sb.from('annonces').select('*').eq('actif', true).order('created_at', { ascending: false });
+    if (data) all = data;
+  }
+  if (!all.length) { toast('⚠️', 'Aucune donnée', 'Pas d\'annonces à exporter.'); return; }
+  const h = ['ID','Titre','Catégorie','Prix','Ville','Quartier','Type','WhatsApp','Vendeur','Vues','Boosté','Date'];
+  const rows = all.map(a => [
+    a.id, `"${(a.titre||'').replace(/"/g,"'")}"`, a.categorie, a.prix, a.ville, a.quartier||'',
+    a.type_compte, a.whatsapp, `"${(a.vendeur||'').replace(/"/g,"'")}"`,
+    a.vues||0, a.boosted?'Oui':'Non', a.created_at ? new Date(a.created_at).toLocaleDateString('fr-FR') : ''
+  ]);
+  const csv  = [h, ...rows].map(r => r.join(',')).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const el   = document.createElement('a');
+  el.href = url; el.download = `teranga_${new Date().toISOString().slice(0,10)}.csv`;
+  el.click(); URL.revokeObjectURL(url);
+  toast('📥', 'Export réussi', `${all.length} annonces exportées.`);
+}
+
+// ════════════════════════════════════════════════════════════
+// RENDU CATÉGORIES
+// ════════════════════════════════════════════════════════════
+function renderCats() {
+  document.getElementById('catsGrid').innerHTML = CATS.map(c => `
+    <div class="cat-card flex flex-col items-center p-3 bg-white rounded-2xl border border-gray-100 hover:border-vert shadow-sm transition"
+      onclick="filterCat('${c.nom}', null)">
+      <div class="cat-icon w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-2 bg-gray-50 border border-gray-100 transition">
+        <span class="cat-ico-txt">${c.emoji}</span>
+      </div>
+      <span class="text-xs font-semibold text-gray-700 text-center leading-tight">${c.nom}</span>
+    </div>`).join('');
+}
+
+function renderDepotCats() {
+  const g = document.getElementById('depotCatGrid');
+  if (!g) return;
+  g.innerHTML = CATS.map(c => `
+    <label class="cursor-pointer">
+      <input type="radio" name="depotCatRadio" value="${c.nom}" class="sr-only">
+      <div class="depot-cat border-2 border-gray-100 rounded-xl p-2 text-center hover:border-vert transition"
+        onclick="selectDepotCat('${c.nom}', this.closest('label').querySelector('.depot-cat'))">
+        <span class="text-xl">${c.emoji}</span>
+        <div class="text-xs font-medium mt-1 leading-tight text-gray-600">${c.nom}</div>
+      </div>
+    </label>`).join('');
+}
+
+function selectDepotCat(cat, el) {
+  selectedCat = cat;
+  document.querySelectorAll('.depot-cat').forEach(b => { b.style.borderColor = '#e5e7eb'; b.style.background = ''; });
+  if (el) { el.style.borderColor = '#00853F'; el.style.background = '#E8F5EE'; }
+}
+
+// ── Type compte switch ──────────────────────────────────────
+function initTypeSwitch() {
+  document.querySelectorAll('input[name="typeCompte"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const isPro = radio.value === 'pro';
+      document.getElementById('optionsPro').classList.toggle('hidden', !isPro);
+      document.getElementById('typeParticBox').classList.toggle('border-vert', !isPro);
+      document.getElementById('typeParticBox').classList.toggle('bg-green-50', !isPro);
+      document.getElementById('typeProBox').classList.toggle('border-vert', isPro);
+      document.getElementById('typeProBox').classList.toggle('bg-green-50', isPro);
+    });
+  });
+  // Titre input count
+  const titre = document.getElementById('dTitre');
+  if (titre) titre.addEventListener('input', () => {
+    document.getElementById('dTitreCount').textContent = `${titre.value.length}/80`;
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════════════════════════
+function showHome() {
+  closeDetail(); closeBoutique();
+  document.getElementById('pageAdmin').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+// ════════════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════════════
+function formatPrix(n) {
+  if (!n && n !== 0) return '—';
+  return parseInt(n).toLocaleString('fr-FR') + ' FCFA';
+}
+
+function dateRelative(ts) {
+  if (!ts) return 'récemment';
+  const diff = (Date.now() - new Date(ts).getTime()) / 1000;
+  if (diff < 60)    return 'à l\'instant';
+  if (diff < 3600)  return `il y a ${Math.floor(diff / 60)} min`;
+  if (diff < 86400) return `il y a ${Math.floor(diff / 3600)}h`;
+  return `il y a ${Math.floor(diff / 86400)}j`;
+}
+
+function toast(icon, title, msg) {
+  document.getElementById('toastIcon').textContent = icon;
+  document.getElementById('toastTitle').textContent = title;
+  document.getElementById('toastMsg').textContent = msg;
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 4500);
+}
+
+function majCompteursHero() {
+  const n = ANNONCES.length;
+  document.getElementById('heroStatBadge').textContent = `📦 ${n.toLocaleString('fr-FR')} annonce${n !== 1 ? 's' : ''}`;
+  document.getElementById('tickerCount').textContent = n.toLocaleString('fr-FR');
+}
+
+function initTicker() {
+  const el = document.getElementById('tickerEl');
+  if (el) el.innerHTML += el.innerHTML;
+}
+</script>
+<!-- ════════════════════════════════════════════
+  SQL À EXÉCUTER DANS SUPABASE (SQL EDITOR)
+════════════════════════════════════════════ -->
+<!--
+ÉTAPE 1 — Copiez ce SQL dans Supabase → SQL Editor → Run
+
+CREATE TABLE annonces (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  titre        TEXT NOT NULL,
+  description  TEXT,
+  prix         INTEGER NOT NULL DEFAULT 0,
+  ville        TEXT,
+  quartier     TEXT,
+  categorie    TEXT,
+  emoji        TEXT,
+  type_compte  TEXT DEFAULT 'particulier',
+  whatsapp     TEXT NOT NULL,
+  vendeur      TEXT,
+  photo_url    TEXT,
+  boosted      BOOLEAN DEFAULT false,
+  urgent       BOOLEAN DEFAULT false,
+  vues         INTEGER DEFAULT 0,
+  actif        BOOLEAN DEFAULT true,
+  wave_ok      BOOLEAN DEFAULT false,
+  livraison    TEXT,
+  nom_boutique TEXT,
+  stock_dispo  TEXT,
+  created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE signalements (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  annonce_id   UUID REFERENCES annonces(id) ON DELETE CASCADE,
+  raison       TEXT,
+  created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Fonction pour incrémenter les vues sans conflit
+CREATE OR REPLACE FUNCTION incrementer_vues(annonce_id UUID)
+RETURNS void AS $$
+  UPDATE annonces SET vues = vues + 1 WHERE id = annonce_id;
+$$ LANGUAGE sql SECURITY DEFINER;
+
+-- Activer la sécurité Row Level Security (RLS)
+ALTER TABLE annonces ENABLE ROW LEVEL SECURITY;
+ALTER TABLE signalements ENABLE ROW LEVEL SECURITY;
+
+-- Policy : tout le monde peut lire les annonces actives
+CREATE POLICY "lecture_publique" ON annonces FOR SELECT USING (actif = true);
+
+-- Policy : tout le monde peut insérer une annonce
+CREATE POLICY "insertion_libre" ON annonces FOR INSERT WITH CHECK (true);
+
+-- Policy : seul le service role peut modifier/supprimer
+CREATE POLICY "lecture_signalements" ON signalements FOR SELECT USING (true);
+CREATE POLICY "insertion_signalements" ON signalements FOR INSERT WITH CHECK (true);
+
+-- Policy update/delete via service role uniquement (admin)
+CREATE POLICY "admin_update" ON annonces FOR UPDATE USING (true);
+CREATE POLICY "admin_delete" ON annonces FOR DELETE USING (true);
+
+ÉTAPE 2 — Activer la réplication temps réel :
+Supabase → Database → Replication → cocher "annonces"
+
+ÉTAPE 3 — Cloudinary :
+1. Créer un compte sur cloudinary.com
+2. Settings → Upload → Add upload preset → Unsigned → nom : "teranga_unsigned"
+
+ÉTAPE 4 — CallMeBot (notifications WA) :
+1. Aller sur callmebot.com/whatsapp.html
+2. Envoyer "I allow callmebot to send me messages" au numéro indiqué
+3. Récupérez votre apikey et la mettre dans CONFIG.CALLMEBOT_KEY
+-->
+</body>
+</html>
