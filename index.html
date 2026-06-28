@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -175,7 +175,7 @@ select option { background: white; }
   BARRE SÉCURITÉ
 ════════════════════════════════════════════ -->
 <div id="secBar" class="bg-amber-50 border-b border-amber-200 py-2 px-4 flex items-center justify-between text-xs">
-  <span class="text-amber-800">🛡️ <strong>TerangaCoin ne demande JAMAIS de code OM/Wave.</strong> Payez uniquement à la livraison, en face à face.</span>
+  <span class="text-amber-800">🛡️ <strong>TerangaCoin ne demande JAMAIS de code OM/Wave,mais il utilise des liens de Paiement.</strong>Payez uniquement à la livraison, en face à face. </span>
   <button onclick="this.parentElement.remove()" class="text-amber-500 hover:text-amber-700 ml-2 shrink-0">✕</button>
 </div>
 
@@ -404,14 +404,14 @@ select option { background: white; }
         <div>
           <h4 class="text-white font-bold mb-3">Options Pro</h4>
           <ul class="space-y-1.5 text-sm">
-            <li class="flex items-center gap-2">🔥 <span>Boost 7 jours — 1 000 FCFA</span></li>
+            <li class="flex items-center gap-2">🔥 <span>Boost 7 jours — 2 000 FCFA</span></li>
             <li class="flex items-center gap-2">⭐ <span>Badge Vérifié — 5 000 FCFA/mois</span></li>
             <li class="flex items-center gap-2">🏪 <span>Boutique Pro — Sur demande</span></li>
           </ul>
         </div>
       </div>
       <div class="border-t border-gray-800 pt-4 text-xs text-center">
-        © 2025 TerangaCoin.sn — Fait avec 🇸🇳 au Sénégal · Contact admin : +221 70 916 57 45
+        © 2026 TerangaCoin.sn — Fait avec 🇸🇳 au Sénégal · Contact admin : +221 70 916 57 45
       </div>
     </div>
   </footer>
@@ -465,7 +465,7 @@ select option { background: white; }
     <!-- Onglets admin -->
     <div class="flex gap-2 mb-5 overflow-x-auto pb-1">
       <button onclick="adminOng('annonces',this)" id="aTabAnn" class="admin-tab active px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap" style="background:#00853F;color:white">📋 Annonces</button>
-      <button onclick="adminOng('boost',this)" id="aTabBoost" class="admin-tab px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap btn-ghost">🔥 Boosts</button>
+      <button onclick="adminOng('boost',this)" id="aTabBoost" class="admin-tab px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap btn-ghost">🔥 Boosts <span id="boostBadge" class="hidden ml-1 bg-red-500 text-white text-xs font-black px-1.5 py-0.5 rounded-full"></span></button>
       <button onclick="adminOng('signalements',this)" id="aTabSig" class="admin-tab px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap btn-ghost">🚨 Signalements</button>
       <button onclick="adminOng('stats',this)" id="aTabStats" class="admin-tab px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap btn-ghost">📊 Stats</button>
       <button onclick="adminOng('message',this)" id="aTabMsg" class="admin-tab px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap btn-ghost">📡 Message</button>
@@ -645,7 +645,7 @@ select option { background: white; }
           <input type="checkbox" id="dBoost" class="w-4 h-4 mt-0.5 accent-red-600">
           <div>
             <div class="font-bold text-red-700 text-sm">🚀 Booster mon annonce — 2 000 FCFA</div>
-            <div class="text-xs text-red-600 mt-0.5">Mise en avant 7 jours + badge URGENT. Paiement par Wave ou OM après publication.</div>
+            <div class="text-xs text-red-600 mt-0.5">Mise en avant 7 jours + badge URGENT. Paiement via lien Wave ou Orange Money. Activation après vérification par l'admin.</div>
           </div>
         </label>
       </div>
@@ -668,22 +668,41 @@ select option { background: white; }
     <div class="p-6 text-center">
       <div class="text-5xl mb-4">🚀</div>
       <h3 class="font-black text-xl text-encre mb-2">Booster votre annonce</h3>
-      <p class="text-gray-500 text-sm mb-5">Votre annonce apparaîtra en tête pendant 7 jours avec le badge URGENT.</p>
+      <p class="text-gray-500 text-sm mb-5">Votre annonce sera mise en tête pendant 7 jours avec le badge URGENT après validation de votre paiement par l'admin.</p>
+
       <div class="bg-gray-50 rounded-2xl p-5 mb-5 text-left space-y-3">
         <div class="font-bold text-encre text-sm mb-3">💸 Payer 2 000 FCFA via :</div>
-        <div class="flex items-center gap-3 p-3 bg-amber-50 rounded-xl border border-amber-200">
-          <span class="text-2xl">🟡</span>
-          <div><div class="font-bold text-sm">Orange Money</div><div class="text-xs text-gray-600 font-mono">#144*2*1*709165745*1000#</div></div>
-        </div>
-        <div class="flex items-center gap-3 p-3 bg-blue-50 rounded-xl border border-blue-200">
+
+        <!-- Lien Wave -->
+        <a href="https://sn.mmapp.wave.com/web/referrals/c/CH6N2Z"
+          target="_blank"
+          class="flex items-center gap-3 p-3 bg-blue-50 rounded-xl border border-blue-200 hover:bg-blue-100 transition cursor-pointer no-underline">
           <span class="text-2xl">🔵</span>
-          <div><div class="font-bold text-sm">Wave</div><div class="text-xs text-gray-600">Numéro : 70 916 57 45</div></div>
-        </div>
+          <div class="flex-1">
+            <div class="font-bold text-sm text-blue-800">Payer avec Wave</div>
+            <div class="text-xs text-blue-600">Cliquez pour payer 2 000 FCFA directement</div>
+          </div>
+          <span class="text-blue-500 text-lg">→</span>
+        </a>
+
+        <!-- Lien Orange Money -->
+        <a href="https://om.orange.sn/pay?to=709165745&amount=2000&message=Boost+TerangaCoin"
+          target="_blank"
+          class="flex items-center gap-3 p-3 bg-amber-50 rounded-xl border border-amber-200 hover:bg-amber-100 transition cursor-pointer no-underline">
+          <span class="text-2xl">🟡</span>
+          <div class="flex-1">
+            <div class="font-bold text-sm text-amber-800">Payer avec Orange Money</div>
+            <div class="text-xs text-amber-600">Cliquez pour payer 2 000 FCFA directement</div>
+          </div>
+          <span class="text-amber-500 text-lg">→</span>
+        </a>
       </div>
-      <div class="bg-green-50 rounded-xl p-4 mb-4 text-sm text-green-800">
-        Après paiement, envoyez la capture sur WhatsApp au <strong>+221 70 916 57 45</strong> avec le numéro de votre annonce. Activation sous 1h.
+
+      <div class="bg-amber-50 rounded-xl p-4 mb-4 text-sm text-amber-800 text-left">
+        ⏳ <strong>Activation manuelle par l'admin.</strong> Après paiement, envoyez votre capture sur WhatsApp. Votre boost sera activé sous 1h.
       </div>
-      <a href="https://wa.me/221709165745?text=Salam,%20j'ai%20payé%20le%20boost%20pour%20mon%20annonce.%20Voici%20ma%20capture."
+
+      <a href="https://wa.me/221709165745?text=Salam,%20j'ai%20payé%20le%20boost%20pour%20mon%20annonce%20sur%20TerangaCoin.sn.%20Voici%20ma%20capture%20de%20paiement."
         target="_blank" class="flex items-center justify-center gap-2 w-full btn-vert py-3 rounded-xl font-bold mb-2">
         💬 Envoyer la preuve sur WhatsApp
       </a>
@@ -762,7 +781,7 @@ const CONFIG = {
   CLOUDINARY_PRESET: 'teranga_unsigned',        // upload preset non signé
 
   // 3. Admin
-  ADMIN_PASSWORD: 'teranga2025',
+  ADMIN_PASSWORD: 'Adadev022002',
   ADMIN_WA:       '221709165745',
 
   // 4. Notification admin à chaque nouvelle annonce
@@ -1239,14 +1258,15 @@ async function publierAnnonce() {
     whatsapp:    wa.replace(/^0+/, ''),
     vendeur:     vendeur,
     photo_url:   url,
-    boosted:     boost,
-    urgent:      boost,
+    boosted:     false,   // JAMAIS auto-activé — validation admin obligatoire
+    urgent:      false,   // JAMAIS auto-activé — validation admin obligatoire
     vues:        0,
     actif:       true,
     livraison:   isPro ? document.getElementById('dLivraison').value : null,
     wave_ok:     isPro ? document.getElementById('dWaveOption').checked : false,
     nom_boutique:isPro ? document.getElementById('dNomBoutique').value.trim() : null,
     stock_dispo: null,
+    boost_demande: boost, // true si l'utilisateur a coché "Booster" → en attente validation admin
   };
 
   try {
@@ -1521,6 +1541,18 @@ async function majKPIs() {
   document.getElementById('kVues').textContent    = vues.toLocaleString('fr-FR');
   document.getElementById('kPro').textContent     = pro;
   document.getElementById('kCA').textContent      = ca.toLocaleString('fr-FR') + ' FCFA';
+
+  // Badge demandes boost en attente
+  const enAttente = all.filter(a => a.boost_demande && !a.boosted && !a.urgent).length;
+  const boostBadge = document.getElementById('boostBadge');
+  if (boostBadge) {
+    if (enAttente > 0) {
+      boostBadge.textContent = enAttente;
+      boostBadge.classList.remove('hidden');
+    } else {
+      boostBadge.classList.add('hidden');
+    }
+  }
 }
 
 async function adminOng(ong, btn) {
@@ -1578,12 +1610,35 @@ async function adminOng(ong, btn) {
   }
 
   if (ong === 'boost') {
-    const boosted = all.filter(a => a.boosted || a.urgent);
-    const nonB    = all.filter(a => !a.boosted && !a.urgent);
+    const boosted  = all.filter(a => a.boosted || a.urgent);
+    const enAttente = all.filter(a => a.boost_demande && !a.boosted && !a.urgent);
+    const nonB     = all.filter(a => !a.boosted && !a.urgent && !a.boost_demande);
     c.innerHTML = `
       <div class="space-y-4">
+
+        <!-- Demandes en attente -->
+        <div class="bg-white border border-orange-200 rounded-xl p-4">
+          <div class="font-black text-orange-700 mb-1">⏳ Demandes de boost en attente (${enAttente.length})</div>
+          <p class="text-xs text-gray-500 mb-3">Ces annonces ont payé et attendent votre validation manuelle.</p>
+          ${enAttente.length === 0 ? '<p class="text-gray-400 text-sm text-center py-3">Aucune demande en attente.</p>' : ''}
+          <div class="space-y-2">
+            ${enAttente.map(a => `
+              <div class="flex items-center gap-3 p-3 bg-orange-50 rounded-xl border border-orange-200">
+                <span class="text-xl">${a.emoji || '📦'}</span>
+                <div class="flex-1 min-w-0">
+                  <div class="font-bold text-sm truncate">${a.titre}</div>
+                  <div class="text-xs text-gray-500">${a.ville} · ${formatPrix(a.prix)} · <a href="https://wa.me/221${a.whatsapp}" target="_blank" class="text-vert font-bold">+221 ${a.whatsapp}</a></div>
+                </div>
+                <span class="text-xs bg-orange-200 text-orange-800 font-bold px-2 py-0.5 rounded-full">En attente</span>
+                <button onclick="adminBoostId('${a.id}')" class="px-3 py-1.5 rounded-lg btn-vert text-xs font-bold">✅ Valider</button>
+                <button onclick="adminRefuserBoost('${a.id}')" class="px-3 py-1.5 rounded-lg border border-red-300 text-red-600 text-xs font-bold hover:bg-red-50 transition">✕ Refuser</button>
+              </div>`).join('')}
+          </div>
+        </div>
+
+        <!-- Annonces boostées actives -->
         <div class="bg-white border border-gray-200 rounded-xl p-4">
-          <div class="font-black text-encre mb-4">🔥 Annonces boostées (${boosted.length})</div>
+          <div class="font-black text-encre mb-4">🔥 Annonces boostées actives (${boosted.length})</div>
           ${boosted.length === 0 ? '<p class="text-gray-400 text-sm text-center py-4">Aucune annonce boostée actuellement.</p>' : ''}
           <div class="space-y-2">
             ${boosted.map(a => `
@@ -1598,6 +1653,8 @@ async function adminOng(ong, btn) {
               </div>`).join('')}
           </div>
         </div>
+
+        <!-- Boost manuel -->
         <div class="bg-white border border-gray-200 rounded-xl p-4">
           <div class="font-black text-encre mb-1">⚡ Booster manuellement</div>
           <p class="text-xs text-gray-500 mb-3">Entrez l'ID d'une annonce pour l'activer en mode URGENT.</p>
@@ -1769,14 +1826,26 @@ function adminFiltrer(q) {
 
 async function adminBoostId(id) {
   if (CONFIG_OK && sb) {
-    await sb.from('annonces').update({ boosted: true, urgent: true }).eq('id', id);
+    await sb.from('annonces').update({ boosted: true, urgent: true, boost_demande: false }).eq('id', id);
   } else {
     const i = ANNONCES.findIndex(a => a.id === id);
-    if (i >= 0) { ANNONCES[i].boosted = true; ANNONCES[i].urgent = true; }
+    if (i >= 0) { ANNONCES[i].boosted = true; ANNONCES[i].urgent = true; ANNONCES[i].boost_demande = false; }
   }
-  toast('🔥', 'Annonce boostée', 'Elle apparaît maintenant en tête de liste.');
+  toast('🔥', 'Boost validé !', 'Annonce mise en avant. Boost activé.');
   await adminOng('boost', document.getElementById('aTabBoost'));
   afficherAnnonces();
+}
+
+async function adminRefuserBoost(id) {
+  if (!confirm('Refuser ce boost ? Le boost_demande sera annulé.')) return;
+  if (CONFIG_OK && sb) {
+    await sb.from('annonces').update({ boost_demande: false }).eq('id', id);
+  } else {
+    const i = ANNONCES.findIndex(a => a.id === id);
+    if (i >= 0) { ANNONCES[i].boost_demande = false; }
+  }
+  toast('✅', 'Boost refusé', 'Demande annulée. Annonce conservée sans boost.');
+  await adminOng('boost', document.getElementById('aTabBoost'));
 }
 
 async function adminUnboost(id) {
@@ -1971,6 +2040,7 @@ CREATE TABLE annonces (
   photo_url    TEXT,
   boosted      BOOLEAN DEFAULT false,
   urgent       BOOLEAN DEFAULT false,
+  boost_demande BOOLEAN DEFAULT false,
   vues         INTEGER DEFAULT 0,
   actif        BOOLEAN DEFAULT true,
   wave_ok      BOOLEAN DEFAULT false,
